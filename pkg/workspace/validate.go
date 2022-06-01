@@ -20,13 +20,14 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/tektoncd/pipeline/pkg/apis/config"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // ValidateBindings will return an error if the bound workspaces in binds don't satisfy the declared
 // workspaces in decls.
-func ValidateBindings(decls []v1beta1.WorkspaceDeclaration, binds []v1beta1.WorkspaceBinding) error {
+func ValidateBindings(ctx context.Context, decls []v1beta1.WorkspaceDeclaration, binds []v1beta1.WorkspaceBinding) error {
 	// This will also be validated at webhook time but in case the webhook isn't invoked for some
 	// reason we'll invoke the same validation here.
 	for _, b := range binds {
@@ -53,7 +54,8 @@ func ValidateBindings(decls []v1beta1.WorkspaceDeclaration, binds []v1beta1.Work
 		}
 	}
 	for _, bind := range binds {
-		if !declNames.Has(bind.Name) {
+		if !declNames.Has(bind.Name) && config.FromContextOrDefaults(ctx).FeatureFlags.EnableAPIFields != "alpha" {
+			// Skip this validation if propagating workspaces since we will propagate as we continue.
 			return fmt.Errorf("workspace binding %q does not match any declared workspace", bind.Name)
 		}
 	}

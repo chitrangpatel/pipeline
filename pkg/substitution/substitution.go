@@ -7,7 +7,7 @@ You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software
+Unless requirned by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
@@ -31,7 +31,7 @@ const braceMatchingRegex = "(\\$(\\(%s(\\.(?P<var1>%s)|\\[\"(?P<var2>%s)\"\\]|\\
 
 // ValidateVariable makes sure all variables in the provided string are known
 func ValidateVariable(name, value, prefix, locationName, path string, vars sets.String) *apis.FieldError {
-	if vs, present, _ := extractVariablesFromString(value, prefix); present {
+	if vs, present, _ := ExtractVariablesFromString(value, prefix); present {
 		for _, v := range vs {
 			v = strings.TrimSuffix(v, "[*]")
 			if !vars.Has(v) {
@@ -47,7 +47,7 @@ func ValidateVariable(name, value, prefix, locationName, path string, vars sets.
 
 // ValidateVariableP makes sure all variables for a parameter in the provided string are known
 func ValidateVariableP(value, prefix string, vars sets.String) *apis.FieldError {
-	if vs, present, errString := extractVariablesFromString(value, prefix); present {
+	if vs, present, errString := ExtractVariablesFromString(value, prefix); present {
 		if errString != "" {
 			return &apis.FieldError{
 				Message: errString,
@@ -71,7 +71,7 @@ func ValidateVariableP(value, prefix string, vars sets.String) *apis.FieldError 
 
 // ValidateVariableProhibited verifies that variables matching the relevant string expressions do not reference any of the names present in vars.
 func ValidateVariableProhibited(name, value, prefix, locationName, path string, vars sets.String) *apis.FieldError {
-	if vs, present, _ := extractVariablesFromString(value, prefix); present {
+	if vs, present, _ := ExtractVariablesFromString(value, prefix); present {
 		for _, v := range vs {
 			v = strings.TrimSuffix(v, "[*]")
 			if vars.Has(v) {
@@ -87,7 +87,7 @@ func ValidateVariableProhibited(name, value, prefix, locationName, path string, 
 
 // ValidateVariableProhibitedP verifies that variables for a parameter matching the relevant string expressions do not reference any of the names present in vars.
 func ValidateVariableProhibitedP(value, prefix string, vars sets.String) *apis.FieldError {
-	if vs, present, errString := extractVariablesFromString(value, prefix); present {
+	if vs, present, errString := ExtractVariablesFromString(value, prefix); present {
 		if errString != "" {
 			return &apis.FieldError{
 				Message: errString,
@@ -111,7 +111,7 @@ func ValidateVariableProhibitedP(value, prefix string, vars sets.String) *apis.F
 
 // ValidateVariableIsolated verifies that variables matching the relevant string expressions are completely isolated if present.
 func ValidateVariableIsolated(name, value, prefix, locationName, path string, vars sets.String) *apis.FieldError {
-	if vs, present, _ := extractVariablesFromString(value, prefix); present {
+	if vs, present, _ := ExtractVariablesFromString(value, prefix); present {
 		firstMatch, _ := extractExpressionFromString(value, prefix)
 		for _, v := range vs {
 			v = strings.TrimSuffix(v, "[*]")
@@ -130,7 +130,7 @@ func ValidateVariableIsolated(name, value, prefix, locationName, path string, va
 
 // ValidateVariableIsolatedP verifies that variables matching the relevant string expressions are completely isolated if present.
 func ValidateVariableIsolatedP(value, prefix string, vars sets.String) *apis.FieldError {
-	if vs, present, errString := extractVariablesFromString(value, prefix); present {
+	if vs, present, errString := ExtractVariablesFromString(value, prefix); present {
 		if errString != "" {
 			return &apis.FieldError{
 				Message: errString,
@@ -167,7 +167,7 @@ func extractExpressionFromString(s, prefix string) (string, bool) {
 	return match[0], true
 }
 
-func extractVariablesFromString(s, prefix string) ([]string, bool, string) {
+func ExtractVariablesFromString(s, prefix string) ([]string, bool, string) {
 	pattern := fmt.Sprintf(braceMatchingRegex, prefix, parameterSubstitution, parameterSubstitution, parameterSubstitution)
 	re := regexp.MustCompile(pattern)
 	matches := re.FindAllStringSubmatch(s, -1)

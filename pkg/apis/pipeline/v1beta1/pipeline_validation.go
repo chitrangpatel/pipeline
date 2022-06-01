@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/tektoncd/pipeline/pkg/apis/config"
 	"github.com/tektoncd/pipeline/pkg/apis/validate"
 	"github.com/tektoncd/pipeline/pkg/list"
 	"github.com/tektoncd/pipeline/pkg/reconciler/pipeline/dag"
@@ -45,6 +46,7 @@ func (p *Pipeline) Validate(ctx context.Context) *apis.FieldError {
 // Validate checks that taskNames in the Pipeline are valid and that the graph
 // of Tasks expressed in the Pipeline makes sense.
 func (ps *PipelineSpec) Validate(ctx context.Context) (errs *apis.FieldError) {
+	cfg := config.FromContextOrDefaults(ctx)
 	if equality.Semantic.DeepEqual(ps, &PipelineSpec{}) {
 		errs = errs.Also(apis.ErrGeneric("expected at least one, got none", "description", "params", "resources", "tasks", "workspaces"))
 	}
@@ -66,8 +68,10 @@ func (ps *PipelineSpec) Validate(ctx context.Context) (errs *apis.FieldError) {
 	errs = errs.Also(validateExecutionStatusVariables(ps.Tasks, ps.Finally))
 	// Validate the pipeline's workspaces.
 	errs = errs.Also(validatePipelineWorkspacesDeclarations(ps.Workspaces))
-	errs = errs.Also(validatePipelineWorkspacesUsage(ps.Workspaces, ps.Tasks).ViaField("tasks"))
-	errs = errs.Also(validatePipelineWorkspacesUsage(ps.Workspaces, ps.Finally).ViaField("finally"))
+	if cfg.FeatureFlags.EnableAPIFields != config.AlphaAPIFields {
+		errs = errs.Also(validatePipelineWorkspacesUsage(ps.Workspaces, ps.Tasks).ViaField("tasks"))
+		errs = errs.Also(validatePipelineWorkspacesUsage(ps.Workspaces, ps.Finally).ViaField("finally"))
+	}
 	// Validate the pipeline's results
 	errs = errs.Also(validatePipelineResults(ps.Results))
 	errs = errs.Also(validateTasksAndFinallySection(ps))

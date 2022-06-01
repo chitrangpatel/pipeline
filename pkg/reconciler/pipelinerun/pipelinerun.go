@@ -49,6 +49,7 @@ import (
 	tresources "github.com/tektoncd/pipeline/pkg/reconciler/taskrun/resources"
 	"github.com/tektoncd/pipeline/pkg/reconciler/volumeclaim"
 	"github.com/tektoncd/pipeline/pkg/remote"
+	"github.com/tektoncd/pipeline/pkg/substitution"
 	"github.com/tektoncd/pipeline/pkg/workspace"
 	resolution "github.com/tektoncd/resolution/pkg/resource"
 	"go.uber.org/zap"
@@ -813,7 +814,7 @@ func (c *Reconciler) createTaskRun(ctx context.Context, rprt *resources.Resolved
 
 	var pipelinePVCWorkspaceName string
 	var err error
-	tr.Spec.Workspaces, pipelinePVCWorkspaceName, err = getTaskrunWorkspaces(pr, rprt)
+	tr.Spec.Workspaces, pipelinePVCWorkspaceName, err = getTaskrunWorkspaces(ctx, pr, rprt)
 	if err != nil {
 		return nil, err
 	}
@@ -866,7 +867,7 @@ func (c *Reconciler) createRun(ctx context.Context, rprt *resources.ResolvedPipe
 	}
 	var pipelinePVCWorkspaceName string
 	var err error
-	r.Spec.Workspaces, pipelinePVCWorkspaceName, err = getTaskrunWorkspaces(pr, rprt)
+	r.Spec.Workspaces, pipelinePVCWorkspaceName, err = getTaskrunWorkspaces(ctx, pr, rprt)
 	if err != nil {
 		return nil, err
 	}
@@ -881,16 +882,56 @@ func (c *Reconciler) createRun(ctx context.Context, rprt *resources.ResolvedPipe
 	return c.PipelineClientSet.TektonV1alpha1().Runs(pr.Namespace).Create(ctx, r, metav1.CreateOptions{})
 }
 
-func getTaskrunWorkspaces(pr *v1beta1.PipelineRun, rprt *resources.ResolvedPipelineRunTask) ([]v1beta1.WorkspaceBinding, string, error) {
+func getTaskrunWorkspaces(ctx context.Context, pr *v1beta1.PipelineRun, rprt *resources.ResolvedPipelineRunTask) ([]v1beta1.WorkspaceBinding, string, error) {
 	var workspaces []v1beta1.WorkspaceBinding
 	var pipelinePVCWorkspaceName string
 	pipelineRunWorkspaces := make(map[string]v1beta1.WorkspaceBinding)
 	for _, binding := range pr.Spec.Workspaces {
 		pipelineRunWorkspaces[binding.Name] = binding
 	}
+
+	if config.FromContextOrDefaults(ctx).FeatureFlags.EnableAPIFields == "alpha" {
+		// Propagate required workspaces from pipelineRun to the pipelineTasks
+		if rprt.PipelineTask.TaskSpec != nil {
+			workspacesUsedInSteps := []string{}
+			ts := rprt.PipelineTask.TaskSpec.TaskSpec
+			for _, step := range ts.Steps {
+				workspacesUsedInScript, _, errString := substitution.ExtractVariablesFromString(step.Script, "workspaces")
+				workspacesUsedInSteps = append(workspacesUsedInSteps, workspacesUsedInScript...)
+				if errString != "" {
+					return nil, "", fmt.Errorf("Error while extracting workspace from Script: %s", errString)
+				}
+				for _, arg := range step.Args {
+					workspacesUsedInArg, _, errString := substitution.ExtractVariablesFromString(arg, "workspaces")
+					if errString != "" {
+						return nil, "", fmt.Errorf("Error while extracting workspace from Script: %s", errString)
+					}
+					workspacesUsedInSteps = append(workspacesUsedInSteps, workspacesUsedInArg...)
+				}
+			}
+
+			ptw := []string{}
+			for _, ws := range rprt.PipelineTask.Workspaces {
+				ptw = append(ptw, ws.Name)
+			}
+
+			for _, wspace := range workspacesUsedInSteps {
+				skip := false
+				for _, w := range ptw {
+					if w == wspace {
+						skip = true
+						break
+					}
+				}
+				if !skip {
+					rprt.PipelineTask.Workspaces = append(rprt.PipelineTask.Workspaces, v1beta1.WorkspacePipelineTaskBinding{Name: wspace})
+				}
+			}
+		}
+	}
+
 	for _, ws := range rprt.PipelineTask.Workspaces {
 		taskWorkspaceName, pipelineTaskSubPath, pipelineWorkspaceName := ws.Name, ws.SubPath, ws.Workspace
-
 		pipelineWorkspace := pipelineWorkspaceName
 
 		if pipelineWorkspaceName == "" {
