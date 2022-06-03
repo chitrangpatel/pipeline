@@ -17,18 +17,25 @@ limitations under the License.
 package pod
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/tektoncd/pipeline/pkg/apis/config"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	"github.com/tektoncd/pipeline/pkg/termination"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"knative.dev/pkg/apis"
 )
 
@@ -70,6 +77,9 @@ const (
 
 	// timeFormat is RFC3339 with millisecond
 	timeFormat = "2006-01-02T15:04:05.000Z07:00"
+
+	// Max allowed size of the CRD : Setting to 1.0M
+	maxCRDLimit = 1048576
 )
 
 const oomKilled = "OOMKilled"
@@ -100,7 +110,7 @@ func SidecarsReady(podStatus corev1.PodStatus) bool {
 }
 
 // MakeTaskRunStatus returns a TaskRunStatus based on the Pod's status.
-func MakeTaskRunStatus(logger *zap.SugaredLogger, tr v1beta1.TaskRun, pod *corev1.Pod) (v1beta1.TaskRunStatus, error) {
+func MakeTaskRunStatus(ctx context.Context, logger *zap.SugaredLogger, tr v1beta1.TaskRun, pod *corev1.Pod) (v1beta1.TaskRunStatus, error) {
 	trs := &tr.Status
 	if trs.GetCondition(apis.ConditionSucceeded) == nil || trs.GetCondition(apis.ConditionSucceeded).Status == corev1.ConditionUnknown {
 		// If the taskRunStatus doesn't exist yet, it's because we just started running
@@ -132,7 +142,7 @@ func MakeTaskRunStatus(logger *zap.SugaredLogger, tr v1beta1.TaskRun, pod *corev
 	}
 
 	var merr *multierror.Error
-	if err := setTaskRunStatusBasedOnStepStatus(logger, stepStatuses, &tr); err != nil {
+	if err := setTaskRunStatusBasedOnStepStatus(ctx, logger, stepStatuses, &tr); err != nil {
 		merr = multierror.Append(merr, err)
 	}
 
@@ -143,15 +153,69 @@ func MakeTaskRunStatus(logger *zap.SugaredLogger, tr v1beta1.TaskRun, pod *corev
 	return *trs, merr.ErrorOrNil()
 }
 
-func setTaskRunStatusBasedOnStepStatus(logger *zap.SugaredLogger, stepStatuses []corev1.ContainerStatus, tr *v1beta1.TaskRun) *multierror.Error {
+func getPodLogs(ctx context.Context, namespace string, name string, container string) string {
+	podLogOpts := corev1.PodLogOptions{Container: container}
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		log.Println(err)
+		return ""
+	}
+	// creates the clientset
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		log.Println(err)
+		return ""
+	}
+	req := clientset.CoreV1().Pods(namespace).GetLogs(name, &podLogOpts)
+	podLogs, err := req.Stream(ctx)
+	if err != nil {
+		log.Println(err)
+		return ""
+	}
+	defer podLogs.Close()
+
+	buf := new(bytes.Buffer)
+	_, err = io.Copy(buf, podLogs)
+	if err != nil {
+		log.Println(err)
+		return ""
+	}
+	str := buf.String()
+
+	return str
+}
+
+func setTaskRunStatusBasedOnStepStatus(ctx context.Context, logger *zap.SugaredLogger, stepStatuses []corev1.ContainerStatus, tr *v1beta1.TaskRun) *multierror.Error {
 	trs := &tr.Status
 	var merr *multierror.Error
 
+	sidecarLogsResultsEnabled := config.FromContextOrDefaults(ctx).FeatureFlags.EnableSidecarLogsResults
+	stepResults := []v1beta1.PipelineResourceResult{}
+	if sidecarLogsResultsEnabled {
+		resultsSidecarLogs := getPodLogs(ctx, tr.Namespace, tr.Status.PodName, "sidecar-results")
+		if len(resultsSidecarLogs) > maxCRDLimit {
+			err := fmt.Errorf("Results exceeded the Max CRD allowed limit of %s bytes. The sidecar results contained %s bytes.", maxCRDLimit, len(resultsSidecarLogs))
+			merr = multierror.Append(merr, err)
+		} else {
+			splitResults := strings.Split(resultsSidecarLogs, "\n")
+			for _, sr := range splitResults {
+				kv := strings.SplitN(sr, " ", 2)
+				if len(kv) == 2 {
+					stepResults = append(stepResults, v1beta1.PipelineResourceResult{
+						Key:        kv[0],
+						Value:      kv[1],
+						ResultType: v1beta1.TaskRunResultType,
+					})
+				}
+			}
+		}
+	}
 	for _, s := range stepStatuses {
 		if s.State.Terminated != nil && len(s.State.Terminated.Message) != 0 {
 			msg := s.State.Terminated.Message
 
 			results, err := termination.ParseMessage(logger, msg)
+			results = append(results, stepResults...)
 			if err != nil {
 				logger.Errorf("termination message could not be parsed as JSON: %v", err)
 				merr = multierror.Append(merr, err)
@@ -166,17 +230,10 @@ func setTaskRunStatusBasedOnStepStatus(logger *zap.SugaredLogger, stepStatuses [
 					logger.Errorf("error extracting the exit code of step %q in taskrun %q: %v", s.Name, tr.Name, err)
 					merr = multierror.Append(merr, err)
 				}
-				taskResults, pipelineResourceResults, filteredResults := filterResultsAndResources(results)
+				taskResults, pipelineResourceResults, _ := filterResultsAndResources(results)
 				if tr.IsSuccessful() {
 					trs.TaskRunResults = append(trs.TaskRunResults, taskResults...)
 					trs.ResourcesResult = append(trs.ResourcesResult, pipelineResourceResults...)
-				}
-				msg, err = createMessageFromResults(filteredResults)
-				if err != nil {
-					logger.Errorf("%v", err)
-					merr = multierror.Append(merr, err)
-				} else {
-					s.State.Terminated.Message = msg
 				}
 				if time != nil {
 					s.State.Terminated.StartedAt = *time

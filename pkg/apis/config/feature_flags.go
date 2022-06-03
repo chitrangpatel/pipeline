@@ -64,6 +64,8 @@ const (
 	DefaultEmbeddedStatus = FullEmbeddedStatus
 	// DefaultEnableSpire is the default value for "enable-spire".
 	DefaultEnableSpire = false
+	// DefaultSidecarLogsResults is the default value for "enable-larger-results".
+	DefaultSidecarLogsResults = false
 
 	disableAffinityAssistantKey         = "disable-affinity-assistant"
 	disableCredsInitKey                 = "disable-creds-init"
@@ -76,6 +78,7 @@ const (
 	sendCloudEventsForRuns              = "send-cloudevents-for-runs"
 	embeddedStatus                      = "embedded-status"
 	enableSpire                         = "enable-spire"
+	enableSidecarLogsResults            = "enable-sidecar-logs-results"
 )
 
 // FeatureFlags holds the features configurations
@@ -93,6 +96,7 @@ type FeatureFlags struct {
 	AwaitSidecarReadiness            bool
 	EmbeddedStatus                   string
 	EnableSpire                      bool
+	EnableSidecarLogsResults         bool
 }
 
 // GetFeatureFlagsConfigName returns the name of the configmap containing all
@@ -142,6 +146,9 @@ func NewFeatureFlagsFromMap(cfgMap map[string]string) (*FeatureFlags, error) {
 		return nil, err
 	}
 	if err := setEmbeddedStatus(cfgMap, DefaultEmbeddedStatus, &tc.EmbeddedStatus); err != nil {
+		return nil, err
+	}
+	if err := setFeature(enableSidecarLogsResults, DefaultSidecarLogsResults, &tc.EnableSidecarLogsResults); err != nil {
 		return nil, err
 	}
 

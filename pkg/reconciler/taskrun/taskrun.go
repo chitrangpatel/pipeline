@@ -184,6 +184,11 @@ func (c *Reconciler) ReconcileKind(ctx context.Context, tr *v1beta1.TaskRun) pkg
 	// updates regardless of whether the reconciliation errored out.
 	if err = c.reconcile(ctx, tr, rtr); err != nil {
 		logger.Errorf("Reconcile: %v", err.Error())
+		if strings.Contains(err.Error(), "Max CRD allowed limit") {
+			message := fmt.Sprintf("TaskRun %q failed to finish because its results exceeded the max allowed CRD limit of 1M.", tr.Name)
+			err := c.failTaskRun(ctx, tr, v1beta1.TaskRunReasonResultsLargerThanCRDLimit, message)
+			return c.finishReconcileUpdateEmitEvents(ctx, tr, before, err)
+		}
 	}
 
 	// Emit events (only when ConditionSucceeded was changed)
@@ -248,9 +253,8 @@ func (c *Reconciler) stopSidecars(ctx context.Context, tr *v1beta1.TaskRun) erro
 	if tr.Status.PodName == "" {
 		return nil
 	}
-
 	// do not continue if the TaskSpec had no sidecars
-	if tr.Status.TaskSpec != nil && len(tr.Status.TaskSpec.Sidecars) == 0 {
+	if tr.Status.TaskSpec != nil && len(tr.Status.TaskSpec.Sidecars) == 0 && len(tr.Status.Sidecars) == 0 {
 		return nil
 	}
 
@@ -535,7 +539,7 @@ func (c *Reconciler) reconcile(ctx context.Context, tr *v1beta1.TaskRun, rtr *re
 	}
 
 	// Convert the Pod's status to the equivalent TaskRun Status.
-	tr.Status, err = podconvert.MakeTaskRunStatus(logger, *tr, pod)
+	tr.Status, err = podconvert.MakeTaskRunStatus(ctx, logger, *tr, pod)
 	if err != nil {
 		return err
 	}

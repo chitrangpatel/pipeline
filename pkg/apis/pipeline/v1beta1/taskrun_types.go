@@ -181,6 +181,8 @@ const (
 	TaskRunReasonsResultsVerificationFailed TaskRunReason = "TaskRunResultsVerificationFailed"
 	// AwaitingTaskRunResults is the reason set when waiting upon `TaskRun` results and signatures to verify
 	AwaitingTaskRunResults TaskRunReason = "AwaitingTaskRunResults"
+	// TaskRunReasonTimedOut is the reason set when the Taskrun has timed out
+	TaskRunReasonResultsLargerThanCRDLimit TaskRunReason = "TaskRunResultsLargerThanCRDLimit"
 )
 
 func (t TaskRunReason) String() string {

@@ -80,6 +80,9 @@ type Entrypointer struct {
 	OnError string
 	// StepMetadataDir is the directory for a step where the step related metadata can be stored
 	StepMetadataDir string
+
+	//Dont Send results to the termination path.
+	DontSendResultsToTerminationPath bool
 }
 
 // Waiter encapsulates waiting for files to exist.
@@ -183,7 +186,8 @@ func (e Entrypointer) Go() error {
 
 	// strings.Split(..) with an empty string returns an array that contains one element, an empty string.
 	// This creates an error when trying to open the result folder as a file.
-	if len(e.Results) >= 1 && e.Results[0] != "" {
+	if !e.DontSendResultsToTerminationPath && len(e.Results) >= 1 && e.Results[0] != "" {
+		log.Println("Outputting results to termination path")
 		if err := e.readResultsFromDisk(pipeline.DefaultResultPath); err != nil {
 			logger.Fatalf("Error while handling results: %s", err)
 		}

@@ -69,7 +69,7 @@ data:
   # Setting this flag to "true" enables the use of Tekton OCI bundle.
   # This is an experimental feature and thus should still be considered
   # an alpha feature.
-  enable-tekton-oci-bundles: "false"
+  enable-tekton-oci-bundles: "true"
   # Setting this flag to "true" enables the use of custom tasks from
   # within pipelines.
   # This is an experimental feature and thus should still be considered
@@ -81,3 +81,6 @@ data:
   # Setting this flag to "true" enables CloudEvents for Runs, as long as a
   # CloudEvents sink is configured in the config-defaults config map
   send-cloudevents-for-runs: "false"
+    # Setting this flag to "true" enables the use of a results sidecar logs
+    # to extract results larger than 4KB (size of the termination message). 
+  enable-sidecar-logs-results: "true"

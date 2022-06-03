@@ -108,7 +108,7 @@ var (
 // command, we must have fetched the image's ENTRYPOINT before calling this
 // method, using entrypoint_lookup.go.
 // Additionally, Step timeouts are added as entrypoint flag.
-func orderContainers(commonExtraEntrypointArgs []string, steps []corev1.Container, taskSpec *v1beta1.TaskSpec, breakpointConfig *v1beta1.TaskRunDebug, waitForReadyAnnotation bool) ([]corev1.Container, error) {
+func orderContainers(commonExtraEntrypointArgs []string, steps []corev1.Container, taskSpec *v1beta1.TaskSpec, breakpointConfig *v1beta1.TaskRunDebug, waitForReadyAnnotation bool, isSidecarLogsResultsEnabled bool) ([]corev1.Container, error) {
 	if len(steps) == 0 {
 		return nil, errors.New("No steps specified")
 	}
@@ -133,6 +133,9 @@ func orderContainers(commonExtraEntrypointArgs []string, steps []corev1.Containe
 			"-termination_path", terminationPath,
 			"-step_metadata_dir", filepath.Join(runDir, idx, "status"),
 		)
+		if isSidecarLogsResultsEnabled == true {
+			argsForEntrypoint = append(argsForEntrypoint, "-dont_send_results_to_termination_path")
+		}
 		argsForEntrypoint = append(argsForEntrypoint, commonExtraEntrypointArgs...)
 		if taskSpec != nil {
 			if taskSpec.Steps != nil && len(taskSpec.Steps) >= i+1 {
@@ -236,6 +239,7 @@ func UpdateReady(ctx context.Context, kubeclient kubernetes.Interface, pod corev
 // StopSidecars updates sidecar containers in the Pod to a nop image, which
 // exits successfully immediately.
 func StopSidecars(ctx context.Context, nopImage string, kubeclient kubernetes.Interface, namespace, name string) (*corev1.Pod, error) {
+
 	newPod, err := kubeclient.CoreV1().Pods(namespace).Get(ctx, name, metav1.GetOptions{})
 	if k8serrors.IsNotFound(err) {
 		// return NotFound as-is, since the K8s error checks don't handle wrapping.

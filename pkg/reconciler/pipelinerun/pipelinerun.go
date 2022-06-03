@@ -123,6 +123,11 @@ const (
 	// ReasonResolvingPipelineRef indicates that the PipelineRun is waiting for
 	// its pipelineRef to be asynchronously resolved.
 	ReasonResolvingPipelineRef = "ResolvingPipelineRef"
+	// ReasonResultsLargerThenCRDLimit indicates that the total size of results
+	// in all the pipeline tasks exceeds the CRD limit.
+	ReasonResultsLargerThenCRDLimit = "ResultsLargerThenCRDLimit"
+
+	maxCRDLimit = 1048576
 )
 
 // Reconciler implements controller.Reconciler for Configuration resources.
@@ -697,6 +702,19 @@ func (c *Reconciler) reconcile(ctx context.Context, pr *v1beta1.PipelineRun, get
 		}
 	}
 
+	// Before the reconcile loop ends, check the size of the pipelinerun CRD.
+	payload, _ := json.Marshal(pr)
+	if len(payload) > maxCRDLimit {
+		err := fmt.Errorf("End: Max CRD Limit of 1 M reached: Total size of all the results is %v bytes which exceeds the CRD limit of 1 MB", len(payload))
+		pr.Status.MarkFailed(ReasonResultsLargerThenCRDLimit, err.Error())
+		// unset PipelineResults so that the controller does not keep failing in trying to update the etcd server with this large payload
+		pr.Status.PipelineResults = nil
+
+		// TODO(Chitrang): Unset the results and params of the TaskRuns and Runs to nil instead of the entire taskrun or run.
+		pr.Status.TaskRuns = nil
+		pr.Status.Runs = nil
+		return controller.NewPermanentError(err)
+	}
 	logger.Infof("PipelineRun %s status is being set to %s", pr.Name, after)
 	return nil
 }
@@ -724,6 +742,15 @@ func (c *Reconciler) runNextSchedulableTask(ctx context.Context, pr *v1beta1.Pip
 	}
 
 	resources.ApplyTaskResults(nextRpts, resolvedResultRefs)
+	// Check the size of the task after applying results from previous tasks.
+	payload, _ := json.Marshal(nextRpts)
+	if len(payload) > maxCRDLimit {
+		err := fmt.Errorf("Max CRD Limit of 1 M reached before scheduling a new task: Total size of all the results is %v bytes which exceeds the CRD limit of 1 MB", len(payload))
+		pr.Status.MarkFailed(ReasonResultsLargerThenCRDLimit, err.Error())
+		// unset this so that the controller does not keep failing in trying to update the etcd server with this large payload
+		nextRpts = nil
+		return controller.NewPermanentError(err)
+	}
 	// After we apply Task Results, we may be able to evaluate more
 	// when expressions, so reset the skipped cache
 	pipelineRunFacts.ResetSkippedCache()

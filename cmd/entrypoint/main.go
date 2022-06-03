@@ -50,7 +50,8 @@ var (
 	breakpointOnFailure = flag.Bool("breakpoint_on_failure", false, "If specified, expect steps to not skip on failure")
 	onError             = flag.String("on_error", "", "Set to \"continue\" to ignore an error and continue when a container terminates with a non-zero exit code."+
 		" Set to \"stopAndFail\" to declare a failure with a step error and stop executing the rest of the steps.")
-	stepMetadataDir = flag.String("step_metadata_dir", "", "If specified, create directory to store the step metadata e.g. /tekton/steps/<step-name>/")
+	stepMetadataDir                  = flag.String("step_metadata_dir", "", "If specified, create directory to store the step metadata e.g. /tekton/steps/<step-name>/")
+	dontSendResultsToTerminationPath = flag.Bool("dont_send_results_to_termination_path", false, "If specified, dont send results to the termination path.")
 )
 
 const (
@@ -142,12 +143,13 @@ func main() {
 			stdoutPath: *stdoutPath,
 			stderrPath: *stderrPath,
 		},
-		PostWriter:          &realPostWriter{},
-		Results:             strings.Split(*results, ","),
-		Timeout:             timeout,
-		BreakpointOnFailure: *breakpointOnFailure,
-		OnError:             *onError,
-		StepMetadataDir:     *stepMetadataDir,
+		PostWriter:                       &realPostWriter{},
+		Results:                          strings.Split(*results, ","),
+		Timeout:                          timeout,
+		BreakpointOnFailure:              *breakpointOnFailure,
+		OnError:                          *onError,
+		StepMetadataDir:                  *stepMetadataDir,
+		DontSendResultsToTerminationPath: *dontSendResultsToTerminationPath,
 	}
 
 	// Copy any creds injected by the controller into the $HOME directory of the current
