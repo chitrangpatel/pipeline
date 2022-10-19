@@ -45,45 +45,6 @@ func TestTaskRun_Invalidate(t *testing.T) {
 		want: apis.ErrMissingOneOf("spec.taskRef", "spec.taskSpec").Also(
 			apis.ErrGeneric(`invalid resource name "": must be a valid DNS label`, "metadata.name")),
 	}, {
-		name: "propagating params not provided but used by step",
-		taskRun: &v1beta1.TaskRun{
-			ObjectMeta: metav1.ObjectMeta{Name: "tr"},
-			Spec: v1beta1.TaskRunSpec{
-				TaskSpec: &v1beta1.TaskSpec{
-					Steps: []v1beta1.Step{{
-						Name:    "echo",
-						Image:   "ubuntu",
-						Command: []string{"echo"},
-						Args:    []string{"$(params.task-words[*])"},
-					}},
-				},
-			},
-		},
-		want: &apis.FieldError{
-			Message: `non-existent variable in "$(params.task-words[*])"`,
-			Paths:   []string{"spec.steps[0].args[0]"},
-		},
-	}, {
-		name: "propagating object params not provided but used by step",
-		taskRun: &v1beta1.TaskRun{
-			ObjectMeta: metav1.ObjectMeta{Name: "tr"},
-			Spec: v1beta1.TaskRunSpec{
-				TaskSpec: &v1beta1.TaskSpec{
-					Steps: []v1beta1.Step{{
-						Name:    "echo",
-						Image:   "ubuntu",
-						Command: []string{"echo"},
-						Args:    []string{"$(params.task-words.hello)"},
-					}},
-				},
-			},
-		},
-		want: &apis.FieldError{
-			Message: `non-existent variable in "$(params.task-words.hello)"`,
-			Paths:   []string{"spec.steps[0].args[0]"},
-		},
-		wc: config.EnableAlphaAPIFields,
-	}, {
 		name: "propagating object properties not provided",
 		taskRun: &v1beta1.TaskRun{
 			ObjectMeta: metav1.ObjectMeta{Name: "tr"},
