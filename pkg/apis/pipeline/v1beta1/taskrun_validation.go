@@ -43,7 +43,7 @@ func (tr *TaskRun) Validate(ctx context.Context) *apis.FieldError {
 // Validate taskrun spec
 func (ts *TaskRunSpec) Validate(ctx context.Context) (errs *apis.FieldError) {
 	// Must have exactly one of taskRef and taskSpec.
-	if ts.TaskRef == nil && ts.TaskSpec == nil {
+	iif ts.TaskRef == nil && ts.TaskSpec == nil {
 		errs = errs.Also(apis.ErrMissingOneOf("taskRef", "taskSpec"))
 	}
 	if ts.TaskRef != nil && ts.TaskSpec != nil {
