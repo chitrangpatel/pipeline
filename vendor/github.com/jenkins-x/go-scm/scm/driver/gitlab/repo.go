@@ -38,6 +38,7 @@ type repository struct {
 	HTTPURL       string      `json:"http_url_to_repo"`
 	Namespace     namespace   `json:"namespace"`
 	Permissions   permissions `json:"permissions"`
+	CreatedAt     time.Time   `json:"created_at"`
 }
 
 type namespace struct {
@@ -351,9 +352,7 @@ func (s *repositoryService) CreateHook(ctx context.Context, repo string, input *
 	if input.Secret != "" {
 		params.Set("token", input.Secret)
 	}
-	if input.SkipVerify {
-		params.Set("enable_ssl_verification", "true")
-	}
+	params.Set("enable_ssl_verification", strconv.FormatBool(input.SkipVerify))
 	hasStarEvents := false
 	for _, event := range input.NativeEvents {
 		if event == "*" {
@@ -393,9 +392,7 @@ func (s *repositoryService) UpdateHook(ctx context.Context, repo string, input *
 	if input.Secret != "" {
 		params.Set("token", input.Secret)
 	}
-	if input.SkipVerify {
-		params.Set("enable_ssl_verification", "true")
-	}
+	params.Set("enable_ssl_verification", strconv.FormatBool(input.SkipVerify))
 	hasStarEvents := false
 	for _, event := range input.NativeEvents {
 		if event == "*" {
@@ -495,6 +492,7 @@ func convertRepository(from *repository) *scm.Repository {
 		Clone:     from.HTTPURL,
 		CloneSSH:  from.SSHURL,
 		Link:      from.WebURL,
+		Created:   from.CreatedAt,
 		Perm: &scm.Perm{
 			Pull:  true,
 			Push:  canPush(from),
