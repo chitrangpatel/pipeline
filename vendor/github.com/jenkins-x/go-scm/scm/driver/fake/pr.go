@@ -119,9 +119,10 @@ func filterPullRequests(requests []*scm.PullRequest, opts *scm.PullRequestListOp
 		filteredPullRequests = newFilteredPullRequests
 	}
 
-	if len(opts.Labels) > 0 {
-		panic("implement me")
-	}
+	// Filtering on labels is not implemented in all real providers either...
+	// if len(opts.Labels) > 0 {
+	// 	panic("implement me")
+	// }
 
 	returnRequests := []*scm.PullRequest{}
 
@@ -255,8 +256,14 @@ func (s *pullService) Update(_ context.Context, fullName string, number int, inp
 	return answer, nil, nil
 }
 
-func (s *pullService) Close(context.Context, string, int) (*scm.Response, error) {
-	panic("implement me")
+func (s *pullService) Close(_ context.Context, fullName string, number int) (*scm.Response, error) {
+	pr, ok := s.data.PullRequests[number]
+	if !ok || pr == nil {
+		return nil, fmt.Errorf("pull request %d not found", number)
+	}
+	pr.State = "closed"
+	pr.Closed = true
+	return nil, nil
 }
 
 func (s *pullService) Reopen(context.Context, string, int) (*scm.Response, error) {
@@ -351,6 +358,8 @@ func (s *pullService) Create(_ context.Context, fullName string, input *scm.Pull
 				FullName:  fullName,
 			},
 		},
+		Source: input.Head,
+		Link:   fmt.Sprintf("https://api.fake.com/pull/%d", f.PullRequestID),
 		Head: scm.PullRequestBranch{
 			Ref: input.Head,
 		},

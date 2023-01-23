@@ -310,7 +310,26 @@ func (s *repositoryService) CreateHook(ctx context.Context, repo string, input *
 }
 
 func (s *repositoryService) UpdateHook(ctx context.Context, repo string, input *scm.HookInput) (*scm.Hook, *scm.Response, error) {
-	return nil, nil, scm.ErrNotSupported
+	path := fmt.Sprintf("repos/%s/hooks/%s", repo, input.Name)
+	in := new(hook)
+	in.Active = true
+	in.Name = "web"
+	in.Config.Secret = input.Secret
+	in.Config.ContentType = "json"
+	in.Config.URL = input.Target
+	if input.SkipVerify {
+		in.Config.InsecureSSL = "1"
+	} else {
+		in.Config.InsecureSSL = "0"
+	}
+	input.NativeEvents = append(
+		input.NativeEvents,
+		convertHookEvents(input.Events)...,
+	)
+	in.Events = input.NativeEvents
+	out := new(hook)
+	res, err := s.client.do(ctx, "PATCH", path, in, out)
+	return convertHook(out), res, err
 }
 
 // CreateStatus creates a new commit status.
@@ -458,19 +477,9 @@ func convertCombinedStatus(from *combinedStatus) *scm.CombinedStatus {
 }
 
 func convertStatusList(from []*status) []*scm.Status {
-	// The GitHub API may return multiple statuses with the same Context, in
-	// reverse chronological order:
-	// https://developer.github.com/v3/repos/statuses/#list-statuses-for-a-specific-ref.
-	// We only expose the most recent one to consumers.
 	to := []*scm.Status{}
-	unique := make(map[string]interface{})
 	for _, v := range from {
-		convertedStatus := convertStatus(v)
-		if _, ok := unique[convertedStatus.Label]; ok {
-			continue
-		}
-		to = append(to, convertedStatus)
-		unique[convertedStatus.Label] = nil
+		to = append(to, convertStatus(v))
 	}
 	return to
 }
