@@ -1,5 +1,8 @@
-# cloud.google.com/go/compute v1.10.0
-## explicit; go 1.17
+# cloud.google.com/go/compute v1.12.1
+## explicit; go 1.19
+cloud.google.com/go/compute/internal
+# cloud.google.com/go/compute/metadata v0.2.1
+## explicit; go 1.19
 cloud.google.com/go/compute/metadata
 # code.gitea.io/sdk/gitea v0.15.1
 ## explicit; go 1.13
@@ -722,7 +725,7 @@ golang.org/x/crypto/ssh/knownhosts
 golang.org/x/mod/internal/lazyregexp
 golang.org/x/mod/module
 golang.org/x/mod/semver
-# golang.org/x/net v0.0.0-20220927171203-f486391704dc
+# golang.org/x/net v0.4.0
 ## explicit; go 1.17
 golang.org/x/net/context
 golang.org/x/net/context/ctxhttp
@@ -735,7 +738,7 @@ golang.org/x/net/internal/socks
 golang.org/x/net/internal/timeseries
 golang.org/x/net/proxy
 golang.org/x/net/trace
-# golang.org/x/oauth2 v0.0.0-20220909003341-f21342109be1
+# golang.org/x/oauth2 v0.0.0-20221014153046-6fdb5e3db783
 ## explicit; go 1.17
 golang.org/x/oauth2
 golang.org/x/oauth2/authhandler
@@ -749,7 +752,7 @@ golang.org/x/oauth2/jwt
 ## explicit
 golang.org/x/sync/errgroup
 golang.org/x/sync/semaphore
-# golang.org/x/sys v0.0.0-20220928140112-f11e5e49a4ec
+# golang.org/x/sys v0.3.0
 ## explicit; go 1.17
 golang.org/x/sys/cpu
 golang.org/x/sys/execabs
@@ -757,10 +760,10 @@ golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/plan9
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/term v0.0.0-20220919170432-7a66f970e087
+# golang.org/x/term v0.3.0
 ## explicit; go 1.17
 golang.org/x/term
-# golang.org/x/text v0.3.8-0.20211004125949-5bd84dd9b33b
+# golang.org/x/text v0.5.0
 ## explicit; go 1.17
 golang.org/x/text/cases
 golang.org/x/text/internal
@@ -798,8 +801,8 @@ golang.org/x/tools/internal/typesinternal
 # gomodules.xyz/jsonpatch/v2 v2.2.0
 ## explicit; go 1.12
 gomodules.xyz/jsonpatch/v2
-# google.golang.org/api v0.98.0
-## explicit; go 1.15
+# google.golang.org/api v0.100.0
+## explicit; go 1.19
 google.golang.org/api/support/bundler
 # google.golang.org/appengine v1.6.7
 ## explicit; go 1.11
@@ -813,12 +816,12 @@ google.golang.org/appengine/internal/modules
 google.golang.org/appengine/internal/remote_api
 google.golang.org/appengine/internal/urlfetch
 google.golang.org/appengine/urlfetch
-# google.golang.org/genproto v0.0.0-20220929141241-1ce7b20da813
+# google.golang.org/genproto v0.0.0-20221118155620-16455021b5e6
 ## explicit; go 1.19
 google.golang.org/genproto/googleapis/api/httpbody
 google.golang.org/genproto/googleapis/rpc/status
 google.golang.org/genproto/protobuf/field_mask
-# google.golang.org/grpc v1.50.0
+# google.golang.org/grpc v1.52.1
 ## explicit; go 1.17
 google.golang.org/grpc
 google.golang.org/grpc/attributes
