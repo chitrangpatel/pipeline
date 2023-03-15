@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -185,7 +186,9 @@ func setTaskRunStatusBasedOnStepStatus(ctx context.Context, logger *zap.SugaredL
 	for _, s := range stepStatuses {
 		if s.State.Terminated != nil && len(s.State.Terminated.Message) != 0 {
 			msg := s.State.Terminated.Message
-
+			log.Println("==============")
+			log.Println(string(msg))
+			log.Println("==============")
 			results, err := termination.ParseMessage(logger, msg)
 			if err != nil {
 				logger.Errorf("termination message could not be parsed as JSON: %v", err)

@@ -10,6 +10,7 @@ type Step struct {
 	// Name of the Step specified as a DNS_LABEL.
 	// Each Step in a Task must have a unique name.
 	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
+
 	// Image reference name to run for this Step.
 	// More info: https://kubernetes.io/docs/concepts/containers/images
 	// +optional
@@ -194,13 +195,13 @@ type Step struct {
 	// This is an alpha field. You must set the "enable-api-fields" feature flag to "alpha"
 	// for this field to be supported.
 	//
-	// Workspaces is a list of workspaces from the Task that this Step wants
+	// IsolatedWorkspaces is a list of workspaces from the Task that this Step wants
 	// exclusive access to. Adding a workspace to this list means that any
 	// other Step or Sidecar that does not also request this Workspace will
 	// not have access to it.
 	// +optional
 	// +listType=atomic
-	Workspaces []WorkspaceUsage `json:"workspaces,omitempty"`
+	IsolatedWorkspaces []WorkspaceUsage `json:"isolatedWorkspaces,omitempty"`
 
 	// OnError defines the exiting behavior of a container on error
 	// can be set to [ continue | stopAndFail ]
@@ -212,6 +213,24 @@ type Step struct {
 	// Stores configuration for the stderr stream of the step.
 	// +optional
 	StderrConfig *StepOutputConfig `json:"stderrConfig,omitempty"`
+
+	Params     []Mapping `json:"params,omitempty"`
+	Workspaces []Mapping `json:"workspaces,omitempty"`
+	Results    []Mapping `json:"results,omitempty"`
+
+	// Contains the reference to an existing step
+	//+optional
+	StepRef *StepRef `json:"stepRef,omitempty"`
+}
+
+type StepRef struct {
+	// Name of the referenced step
+	Name string `json:"name,omitempty"`
+}
+
+type Mapping struct {
+	Name  string `json:"name,omitempty"`
+	Value string `json:"value,omitempty"`
 }
 
 // OnErrorType defines a list of supported exiting behavior of a container on error
@@ -693,13 +712,13 @@ type Sidecar struct {
 	// This is an alpha field. You must set the "enable-api-fields" feature flag to "alpha"
 	// for this field to be supported.
 	//
-	// Workspaces is a list of workspaces from the Task that this Sidecar wants
+	// IsolatedWorkspaces is a list of workspaces from the Task that this Sidecar wants
 	// exclusive access to. Adding a workspace to this list means that any
 	// other Step or Sidecar that does not also request this Workspace will
 	// not have access to it.
 	// +optional
 	// +listType=atomic
-	Workspaces []WorkspaceUsage `json:"workspaces,omitempty"`
+	IsolatedWorkspaces []WorkspaceUsage `json:"workspaces,omitempty"`
 }
 
 // ToK8sContainer converts the Sidecar to a Kubernetes Container struct

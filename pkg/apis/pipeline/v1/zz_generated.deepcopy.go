@@ -1108,8 +1108,8 @@ func (in *Sidecar) DeepCopyInto(out *Sidecar) {
 		*out = new(corev1.SecurityContext)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.Workspaces != nil {
-		in, out := &in.Workspaces, &out.Workspaces
+	if in.IsolatedWorkspaces != nil {
+		in, out := &in.IsolatedWorkspaces, &out.IsolatedWorkspaces
 		*out = make([]WorkspaceUsage, len(*in))
 		copy(*out, *in)
 	}
@@ -1216,8 +1216,8 @@ func (in *Step) DeepCopyInto(out *Step) {
 		*out = new(metav1.Duration)
 		**out = **in
 	}
-	if in.Workspaces != nil {
-		in, out := &in.Workspaces, &out.Workspaces
+	if in.IsolatedWorkspaces != nil {
+		in, out := &in.IsolatedWorkspaces, &out.IsolatedWorkspaces
 		*out = make([]WorkspaceUsage, len(*in))
 		copy(*out, *in)
 	}

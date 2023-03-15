@@ -170,23 +170,23 @@ func validateWorkspaceUsages(ctx context.Context, ts *TaskSpec) (errs *apis.Fiel
 	}
 
 	for stepIdx, step := range steps {
-		if len(step.Workspaces) != 0 {
+		if len(step.IsolatedWorkspaces) != 0 {
 			errs = errs.Also(version.ValidateEnabledAPIFields(ctx, "step workspaces", config.AlphaAPIFields).ViaIndex(stepIdx).ViaField("steps"))
 		}
-		for workspaceIdx, w := range step.Workspaces {
+		for workspaceIdx, w := range step.IsolatedWorkspaces {
 			if !wsNames.Has(w.Name) {
-				errs = errs.Also(apis.ErrGeneric(fmt.Sprintf("undefined workspace %q", w.Name), "name").ViaIndex(workspaceIdx).ViaField("workspaces").ViaIndex(stepIdx).ViaField("steps"))
+				errs = errs.Also(apis.ErrGeneric(fmt.Sprintf("undefined workspace %q", w.Name), "name").ViaIndex(workspaceIdx).ViaField("isolatedWorkspaces").ViaIndex(stepIdx).ViaField("steps"))
 			}
 		}
 	}
 
 	for sidecarIdx, sidecar := range sidecars {
-		if len(sidecar.Workspaces) != 0 {
+		if len(sidecar.IsolatedWorkspaces) != 0 {
 			errs = errs.Also(version.ValidateEnabledAPIFields(ctx, "sidecar workspaces", config.AlphaAPIFields).ViaIndex(sidecarIdx).ViaField("sidecars"))
 		}
-		for workspaceIdx, w := range sidecar.Workspaces {
+		for workspaceIdx, w := range sidecar.IsolatedWorkspaces {
 			if !wsNames.Has(w.Name) {
-				errs = errs.Also(apis.ErrGeneric(fmt.Sprintf("undefined workspace %q", w.Name), "name").ViaIndex(workspaceIdx).ViaField("workspaces").ViaIndex(sidecarIdx).ViaField("sidecars"))
+				errs = errs.Also(apis.ErrGeneric(fmt.Sprintf("undefined workspace %q", w.Name), "name").ViaIndex(workspaceIdx).ViaField("isolatedWorkspaces").ViaIndex(sidecarIdx).ViaField("sidecars"))
 			}
 		}
 	}

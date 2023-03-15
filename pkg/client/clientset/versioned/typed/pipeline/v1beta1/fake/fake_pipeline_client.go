@@ -36,6 +36,10 @@ func (c *FakeTektonV1beta1) CustomRuns(namespace string) v1beta1.CustomRunInterf
 	return &FakeCustomRuns{c, namespace}
 }
 
+func (c *FakeTektonV1beta1) MySteps(namespace string) v1beta1.MyStepInterface {
+	return &FakeMySteps{c, namespace}
+}
+
 func (c *FakeTektonV1beta1) Pipelines(namespace string) v1beta1.PipelineInterface {
 	return &FakePipelines{c, namespace}
 }

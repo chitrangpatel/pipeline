@@ -118,13 +118,13 @@ type Step struct {
 	// This is an alpha field. You must set the "enable-api-fields" feature flag to "alpha"
 	// for this field to be supported.
 	//
-	// Workspaces is a list of workspaces from the Task that this Step wants
+	// IsolatedWorkspaces is a list of workspaces from the Task that this Step wants
 	// exclusive access to. Adding a workspace to this list means that any
 	// other Step or Sidecar that does not also request this Workspace will
 	// not have access to it.
 	// +optional
 	// +listType=atomic
-	Workspaces []WorkspaceUsage `json:"workspaces,omitempty"`
+	IsolatedWorkspaces []WorkspaceUsage `json:"workspaces,omitempty"`
 
 	// OnError defines the exiting behavior of a container on error
 	// can be set to [ continue | stopAndFail ]
@@ -479,13 +479,13 @@ type Sidecar struct {
 	// This is an alpha field. You must set the "enable-api-fields" feature flag to "alpha"
 	// for this field to be supported.
 	//
-	// Workspaces is a list of workspaces from the Task that this Sidecar wants
+	// IsolatedWorkspaces is a list of workspaces from the Task that this Sidecar wants
 	// exclusive access to. Adding a workspace to this list means that any
 	// other Step or Sidecar that does not also request this Workspace will
 	// not have access to it.
 	// +optional
 	// +listType=atomic
-	Workspaces []WorkspaceUsage `json:"workspaces,omitempty"`
+	IsolatedWorkspaces []WorkspaceUsage `json:"workspaces,omitempty"`
 }
 
 // ToK8sContainer converts the Sidecar to a Kubernetes Container struct

@@ -192,7 +192,7 @@ func applyWorkspaceMountPath(variable string, spec *v1beta1.TaskSpec, declaratio
 	// Replace instances of the workspace path variable that are overridden per-Step
 	for i := range spec.Steps {
 		step := &spec.Steps[i]
-		for _, usage := range step.Workspaces {
+		for _, usage := range step.IsolatedWorkspaces {
 			if usage.Name == declaration.Name && usage.MountPath != "" {
 				stringReplacements[variable] = usage.MountPath
 				container.ApplyStepReplacements(step, stringReplacements, emptyArrayReplacements)
@@ -202,7 +202,7 @@ func applyWorkspaceMountPath(variable string, spec *v1beta1.TaskSpec, declaratio
 	// Replace instances of the workspace path variable that are overridden per-Sidecar
 	for i := range spec.Sidecars {
 		sidecar := &spec.Sidecars[i]
-		for _, usage := range sidecar.Workspaces {
+		for _, usage := range sidecar.IsolatedWorkspaces {
 			if usage.Name == declaration.Name && usage.MountPath != "" {
 				stringReplacements[variable] = usage.MountPath
 				container.ApplySidecarReplacements(sidecar, stringReplacements, emptyArrayReplacements)

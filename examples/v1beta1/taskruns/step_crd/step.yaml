@@ -1,0 +1,40 @@
+apiVersion: "tekton.dev/v1beta1"
+kind: MyStep
+metadata:
+  name: referenced-step
+spec:
+  requireMappings:
+    params:
+      - name: url
+  name: my-step-yo
+  image: ubuntu
+  script: echo $(params.url)
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: task-step-crd
+spec:
+  params:
+    - name: my-url
+  steps:
+    - name: crd-demo
+      image: ubuntu
+      script: echo hi
+      stepRef:
+        name: referenced-step
+        mappings:
+          params:
+            - name: url
+              value: my-url
+---
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: step-crd-demo
+spec:
+  params:
+    - name: my-url
+      value: https://github.com/tektoncd/pipeline.git
+  taskRef:
+    name: task-step-crd

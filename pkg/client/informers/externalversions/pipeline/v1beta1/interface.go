@@ -28,6 +28,8 @@ type Interface interface {
 	ClusterTasks() ClusterTaskInformer
 	// CustomRuns returns a CustomRunInformer.
 	CustomRuns() CustomRunInformer
+	// MySteps returns a MyStepInformer.
+	MySteps() MyStepInformer
 	// Pipelines returns a PipelineInformer.
 	Pipelines() PipelineInformer
 	// PipelineRuns returns a PipelineRunInformer.
@@ -57,6 +59,11 @@ func (v *version) ClusterTasks() ClusterTaskInformer {
 // CustomRuns returns a CustomRunInformer.
 func (v *version) CustomRuns() CustomRunInformer {
 	return &customRunInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// MySteps returns a MyStepInformer.
+func (v *version) MySteps() MyStepInformer {
+	return &myStepInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // Pipelines returns a PipelineInformer.

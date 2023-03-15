@@ -650,6 +650,137 @@ func (w *wrapTektonV1beta1CustomRunImpl) Watch(ctx context.Context, opts v1.List
 	return nil, errors.New("NYI: Watch")
 }
 
+func (w *wrapTektonV1beta1) MySteps(namespace string) typedtektonv1beta1.MyStepInterface {
+	return &wrapTektonV1beta1MyStepImpl{
+		dyn: w.dyn.Resource(schema.GroupVersionResource{
+			Group:    "tekton.dev",
+			Version:  "v1beta1",
+			Resource: "mysteps",
+		}),
+
+		namespace: namespace,
+	}
+}
+
+type wrapTektonV1beta1MyStepImpl struct {
+	dyn dynamic.NamespaceableResourceInterface
+
+	namespace string
+}
+
+var _ typedtektonv1beta1.MyStepInterface = (*wrapTektonV1beta1MyStepImpl)(nil)
+
+func (w *wrapTektonV1beta1MyStepImpl) Create(ctx context.Context, in *v1beta1.MyStep, opts v1.CreateOptions) (*v1beta1.MyStep, error) {
+	in.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "tekton.dev",
+		Version: "v1beta1",
+		Kind:    "MyStep",
+	})
+	uo := &unstructured.Unstructured{}
+	if err := convert(in, uo); err != nil {
+		return nil, err
+	}
+	uo, err := w.dyn.Namespace(w.namespace).Create(ctx, uo, opts)
+	if err != nil {
+		return nil, err
+	}
+	out := &v1beta1.MyStep{}
+	if err := convert(uo, out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (w *wrapTektonV1beta1MyStepImpl) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
+	return w.dyn.Namespace(w.namespace).Delete(ctx, name, opts)
+}
+
+func (w *wrapTektonV1beta1MyStepImpl) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	return w.dyn.Namespace(w.namespace).DeleteCollection(ctx, opts, listOpts)
+}
+
+func (w *wrapTektonV1beta1MyStepImpl) Get(ctx context.Context, name string, opts v1.GetOptions) (*v1beta1.MyStep, error) {
+	uo, err := w.dyn.Namespace(w.namespace).Get(ctx, name, opts)
+	if err != nil {
+		return nil, err
+	}
+	out := &v1beta1.MyStep{}
+	if err := convert(uo, out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (w *wrapTektonV1beta1MyStepImpl) List(ctx context.Context, opts v1.ListOptions) (*v1beta1.MyStepList, error) {
+	uo, err := w.dyn.Namespace(w.namespace).List(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	out := &v1beta1.MyStepList{}
+	if err := convert(uo, out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (w *wrapTektonV1beta1MyStepImpl) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.MyStep, err error) {
+	uo, err := w.dyn.Namespace(w.namespace).Patch(ctx, name, pt, data, opts)
+	if err != nil {
+		return nil, err
+	}
+	out := &v1beta1.MyStep{}
+	if err := convert(uo, out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (w *wrapTektonV1beta1MyStepImpl) Update(ctx context.Context, in *v1beta1.MyStep, opts v1.UpdateOptions) (*v1beta1.MyStep, error) {
+	in.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "tekton.dev",
+		Version: "v1beta1",
+		Kind:    "MyStep",
+	})
+	uo := &unstructured.Unstructured{}
+	if err := convert(in, uo); err != nil {
+		return nil, err
+	}
+	uo, err := w.dyn.Namespace(w.namespace).Update(ctx, uo, opts)
+	if err != nil {
+		return nil, err
+	}
+	out := &v1beta1.MyStep{}
+	if err := convert(uo, out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (w *wrapTektonV1beta1MyStepImpl) UpdateStatus(ctx context.Context, in *v1beta1.MyStep, opts v1.UpdateOptions) (*v1beta1.MyStep, error) {
+	in.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "tekton.dev",
+		Version: "v1beta1",
+		Kind:    "MyStep",
+	})
+	uo := &unstructured.Unstructured{}
+	if err := convert(in, uo); err != nil {
+		return nil, err
+	}
+	uo, err := w.dyn.Namespace(w.namespace).UpdateStatus(ctx, uo, opts)
+	if err != nil {
+		return nil, err
+	}
+	out := &v1beta1.MyStep{}
+	if err := convert(uo, out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (w *wrapTektonV1beta1MyStepImpl) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
+	return nil, errors.New("NYI: Watch")
+}
+
 func (w *wrapTektonV1beta1) Pipelines(namespace string) typedtektonv1beta1.PipelineInterface {
 	return &wrapTektonV1beta1PipelineImpl{
 		dyn: w.dyn.Resource(schema.GroupVersionResource{

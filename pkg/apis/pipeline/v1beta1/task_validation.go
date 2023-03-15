@@ -19,6 +19,7 @@ package v1beta1
 import (
 	"context"
 	"fmt"
+	"log"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -170,10 +171,10 @@ func validateWorkspaceUsages(ctx context.Context, ts *TaskSpec) (errs *apis.Fiel
 	}
 
 	for stepIdx, step := range steps {
-		if len(step.Workspaces) != 0 {
+		if len(step.IsolatedWorkspaces) != 0 {
 			errs = errs.Also(version.ValidateEnabledAPIFields(ctx, "step workspaces", config.AlphaAPIFields).ViaIndex(stepIdx).ViaField("steps"))
 		}
-		for workspaceIdx, w := range step.Workspaces {
+		for workspaceIdx, w := range step.IsolatedWorkspaces {
 			if !wsNames.Has(w.Name) {
 				errs = errs.Also(apis.ErrGeneric(fmt.Sprintf("undefined workspace %q", w.Name), "name").ViaIndex(workspaceIdx).ViaField("workspaces").ViaIndex(stepIdx).ViaField("steps"))
 			}
@@ -181,10 +182,10 @@ func validateWorkspaceUsages(ctx context.Context, ts *TaskSpec) (errs *apis.Fiel
 	}
 
 	for sidecarIdx, sidecar := range sidecars {
-		if len(sidecar.Workspaces) != 0 {
+		if len(sidecar.IsolatedWorkspaces) != 0 {
 			errs = errs.Also(version.ValidateEnabledAPIFields(ctx, "sidecar workspaces", config.AlphaAPIFields).ViaIndex(sidecarIdx).ViaField("sidecars"))
 		}
-		for workspaceIdx, w := range sidecar.Workspaces {
+		for workspaceIdx, w := range sidecar.IsolatedWorkspaces {
 			if !wsNames.Has(w.Name) {
 				errs = errs.Also(apis.ErrGeneric(fmt.Sprintf("undefined workspace %q", w.Name), "name").ViaIndex(workspaceIdx).ViaField("workspaces").ViaIndex(sidecarIdx).ViaField("sidecars"))
 			}
@@ -218,10 +219,10 @@ func validateSteps(ctx context.Context, steps []Step) (errs *apis.FieldError) {
 }
 
 func validateStep(ctx context.Context, s Step, names sets.String) (errs *apis.FieldError) {
-	if s.Image == "" {
+	if s.Image == "" && s.StepRef == nil {
 		errs = errs.Also(apis.ErrMissingField("Image"))
 	}
-
+	log.Println("ERRORRRRR: ", errs)
 	if s.Script != "" {
 		if len(s.Command) > 0 {
 			errs = errs.Also(&apis.FieldError{

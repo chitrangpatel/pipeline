@@ -22,11 +22,11 @@ func (s Step) convertTo(ctx context.Context, sink *v1.Step) {
 	sink.Script = s.Script
 	sink.Timeout = s.Timeout
 
-	sink.Workspaces = nil
-	for _, w := range s.Workspaces {
+	sink.IsolatedWorkspaces = nil
+	for _, w := range s.IsolatedWorkspaces {
 		new := v1.WorkspaceUsage{}
 		w.convertTo(ctx, &new)
-		sink.Workspaces = append(sink.Workspaces, new)
+		sink.IsolatedWorkspaces = append(sink.IsolatedWorkspaces, new)
 	}
 	sink.OnError = (v1.OnErrorType)(s.OnError)
 	sink.StdoutConfig = (*v1.StepOutputConfig)(s.StdoutConfig)
@@ -53,11 +53,11 @@ func (s *Step) convertFrom(ctx context.Context, source v1.Step) {
 	s.Script = source.Script
 	s.Timeout = source.Timeout
 
-	s.Workspaces = nil
-	for _, w := range source.Workspaces {
+	s.IsolatedWorkspaces = nil
+	for _, w := range source.IsolatedWorkspaces {
 		new := WorkspaceUsage{}
 		new.convertFrom(ctx, w)
-		s.Workspaces = append(s.Workspaces, new)
+		s.IsolatedWorkspaces = append(s.IsolatedWorkspaces, new)
 	}
 	s.OnError = (OnErrorType)(source.OnError)
 	s.StdoutConfig = (*StepOutputConfig)(source.StdoutConfig)
@@ -119,11 +119,11 @@ func (s Sidecar) convertTo(ctx context.Context, sink *v1.Sidecar) {
 	sink.StdinOnce = s.StdinOnce
 	sink.TTY = s.TTY
 	sink.Script = s.Script
-	sink.Workspaces = nil
-	for _, w := range s.Workspaces {
+	sink.IsolatedWorkspaces = nil
+	for _, w := range s.IsolatedWorkspaces {
 		new := v1.WorkspaceUsage{}
 		w.convertTo(ctx, &new)
-		sink.Workspaces = append(sink.Workspaces, new)
+		sink.IsolatedWorkspaces = append(sink.IsolatedWorkspaces, new)
 	}
 }
 
@@ -151,10 +151,10 @@ func (s *Sidecar) convertFrom(ctx context.Context, source v1.Sidecar) {
 	s.StdinOnce = source.StdinOnce
 	s.TTY = source.TTY
 	s.Script = source.Script
-	s.Workspaces = nil
-	for _, w := range source.Workspaces {
+	s.IsolatedWorkspaces = nil
+	for _, w := range source.IsolatedWorkspaces {
 		new := WorkspaceUsage{}
 		new.convertFrom(ctx, w)
-		s.Workspaces = append(s.Workspaces, new)
+		s.IsolatedWorkspaces = append(s.IsolatedWorkspaces, new)
 	}
 }

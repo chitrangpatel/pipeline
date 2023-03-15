@@ -343,7 +343,7 @@ func (c *Reconciler) prepare(ctx context.Context, tr *v1beta1.TaskRun) (*v1beta1
 	}
 	getTaskfunc := resources.GetTaskFuncFromTaskRun(ctx, c.KubeClientSet, c.PipelineClientSet, c.resolutionRequester, tr, verificationpolicies)
 
-	taskMeta, taskSpec, err := resources.GetTaskData(ctx, tr, getTaskfunc)
+	taskMeta, taskSpec, err := resources.GetTaskData(ctx, tr, getTaskfunc, c.KubeClientSet, c.PipelineClientSet, c.resolutionRequester, verificationpolicies)
 	switch {
 	case errors.Is(err, remote.ErrRequestInProgress):
 		message := fmt.Sprintf("TaskRun %s/%s awaiting remote resource", tr.Namespace, tr.Name)

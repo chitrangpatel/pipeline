@@ -25,6 +25,7 @@ rules:
 - apiGroups:
   - tekton.dev
   resources:
+  - mysteps
   - tasks
   - taskruns
   - pipelines

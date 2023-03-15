@@ -30,6 +30,14 @@ type CustomRunListerExpansion interface{}
 // CustomRunNamespaceLister.
 type CustomRunNamespaceListerExpansion interface{}
 
+// MyStepListerExpansion allows custom methods to be added to
+// MyStepLister.
+type MyStepListerExpansion interface{}
+
+// MyStepNamespaceListerExpansion allows custom methods to be added to
+// MyStepNamespaceLister.
+type MyStepNamespaceListerExpansion interface{}
+
 // PipelineListerExpansion allows custom methods to be added to
 // PipelineLister.
 type PipelineListerExpansion interface{}

@@ -1,0 +1,54 @@
+apiVersion: tekton.dev/v1beta1
+kind: MyStep
+metadata:
+  name: git-clone
+spec:
+  workspaces:
+    - name: source
+  params:
+    - name: url
+  results:
+    - name: url
+  image: ubuntu
+  script: |
+    cd $(workspaces.source.path)
+    echo $(params.url) | tee $(results.url.path)
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: clone-task
+spec:
+  workspaces:
+    - name: source
+  params:
+    - name: repo-url
+  results:
+    - name: result-url
+  steps:
+    - name: clone
+      params:
+        - name: url
+          value: repo-url
+      results:
+        - name: url
+          value: result-url
+      stepRef:
+        name: git-clone
+    - name: standard-step
+      image: ubuntu
+      script: echo $(workspaces.source.path)
+---
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: ci-clone-run
+spec:
+  workspaces:
+    - name: source
+      emptyDir: { } # can be the default
+  params:
+    - name: repo-url
+      value: https://github.com/foo/bar.git
+  TaskRef:
+    name: clone-task

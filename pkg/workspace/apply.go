@@ -114,12 +114,12 @@ func Apply(ctx context.Context, ts v1beta1.TaskSpec, wb []v1beta1.WorkspaceBindi
 
 	if alphaOrBetaEnabled {
 		for _, step := range ts.Steps {
-			for _, workspaceUsage := range step.Workspaces {
+			for _, workspaceUsage := range step.IsolatedWorkspaces {
 				isolatedWorkspaces.Insert(workspaceUsage.Name)
 			}
 		}
 		for _, sidecar := range ts.Sidecars {
-			for _, workspaceUsage := range sidecar.Workspaces {
+			for _, workspaceUsage := range sidecar.IsolatedWorkspaces {
 				isolatedWorkspaces.Insert(workspaceUsage.Name)
 			}
 		}
@@ -188,7 +188,7 @@ func mountAsSharedWorkspace(ts v1beta1.TaskSpec, volumeMount corev1.VolumeMount)
 func mountAsIsolatedWorkspace(ts v1beta1.TaskSpec, workspaceName string, volumeMount corev1.VolumeMount) {
 	for i := range ts.Steps {
 		step := &ts.Steps[i]
-		for _, workspaceUsage := range step.Workspaces {
+		for _, workspaceUsage := range step.IsolatedWorkspaces {
 			if workspaceUsage.Name == workspaceName {
 				vm := volumeMount
 				if workspaceUsage.MountPath != "" {
@@ -201,7 +201,7 @@ func mountAsIsolatedWorkspace(ts v1beta1.TaskSpec, workspaceName string, volumeM
 	}
 	for i := range ts.Sidecars {
 		sidecar := &ts.Sidecars[i]
-		for _, workspaceUsage := range sidecar.Workspaces {
+		for _, workspaceUsage := range sidecar.IsolatedWorkspaces {
 			if workspaceUsage.Name == workspaceName {
 				vm := volumeMount
 				if workspaceUsage.MountPath != "" {

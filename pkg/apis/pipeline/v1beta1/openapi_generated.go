@@ -43,8 +43,11 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.CustomRunSpec":                   schema_pkg_apis_pipeline_v1beta1_CustomRunSpec(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.EmbeddedCustomRunSpec":           schema_pkg_apis_pipeline_v1beta1_EmbeddedCustomRunSpec(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.EmbeddedTask":                    schema_pkg_apis_pipeline_v1beta1_EmbeddedTask(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Mapping":                         schema_pkg_apis_pipeline_v1beta1_Mapping(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Matrix":                          schema_pkg_apis_pipeline_v1beta1_Matrix(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.MatrixInclude":                   schema_pkg_apis_pipeline_v1beta1_MatrixInclude(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.MyStep":                          schema_pkg_apis_pipeline_v1beta1_MyStep(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.MyStepList":                      schema_pkg_apis_pipeline_v1beta1_MyStepList(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Param":                           schema_pkg_apis_pipeline_v1beta1_Param(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.ParamSpec":                       schema_pkg_apis_pipeline_v1beta1_ParamSpec(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.ParamValue":                      schema_pkg_apis_pipeline_v1beta1_ParamValue(ref),
@@ -77,6 +80,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.SkippedTask":                     schema_pkg_apis_pipeline_v1beta1_SkippedTask(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Step":                            schema_pkg_apis_pipeline_v1beta1_Step(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.StepOutputConfig":                schema_pkg_apis_pipeline_v1beta1_StepOutputConfig(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.StepRef":                         schema_pkg_apis_pipeline_v1beta1_StepRef(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.StepState":                       schema_pkg_apis_pipeline_v1beta1_StepState(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.StepTemplate":                    schema_pkg_apis_pipeline_v1beta1_StepTemplate(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Task":                            schema_pkg_apis_pipeline_v1beta1_Task(ref),
@@ -1059,6 +1063,30 @@ func schema_pkg_apis_pipeline_v1beta1_EmbeddedTask(ref common.ReferenceCallback)
 	}
 }
 
+func schema_pkg_apis_pipeline_v1beta1_Mapping(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"value": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func schema_pkg_apis_pipeline_v1beta1_Matrix(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1150,6 +1178,97 @@ func schema_pkg_apis_pipeline_v1beta1_MatrixInclude(ref common.ReferenceCallback
 		},
 		Dependencies: []string{
 			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Param"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1beta1_MyStep(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Step represents a collection of sequential steps that are run as part of a Pipeline using a set of inputs and producing a set of outputs. Steps execute when StepRuns are created that provide the input parameters and resources and output resources the Step requires.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Spec holds the desired state of the Step from the client",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Step"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Step", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1beta1_MyStepList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "StepList contains a list of Step",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Default: map[string]interface{}{},
+							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.MyStep"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.MyStep", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
 	}
 }
 
@@ -2973,7 +3092,7 @@ func schema_pkg_apis_pipeline_v1beta1_Sidecar(ref common.ReferenceCallback) comm
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Description: "This is an alpha field. You must set the \"enable-api-fields\" feature flag to \"alpha\" for this field to be supported.\n\nWorkspaces is a list of workspaces from the Task that this Sidecar wants exclusive access to. Adding a workspace to this list means that any other Step or Sidecar that does not also request this Workspace will not have access to it.",
+							Description: "This is an alpha field. You must set the \"enable-api-fields\" feature flag to \"alpha\" for this field to be supported.\n\nIsolatedWorkspaces is a list of workspaces from the Task that this Sidecar wants exclusive access to. Adding a workspace to this list means that any other Step or Sidecar that does not also request this Workspace will not have access to it.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -3364,14 +3483,14 @@ func schema_pkg_apis_pipeline_v1beta1_Step(ref common.ReferenceCallback) common.
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Duration"),
 						},
 					},
-					"workspaces": {
+					"isolatedWorkspaces": {
 						VendorExtensible: spec.VendorExtensible{
 							Extensions: spec.Extensions{
 								"x-kubernetes-list-type": "atomic",
 							},
 						},
 						SchemaProps: spec.SchemaProps{
-							Description: "This is an alpha field. You must set the \"enable-api-fields\" feature flag to \"alpha\" for this field to be supported.\n\nWorkspaces is a list of workspaces from the Task that this Step wants exclusive access to. Adding a workspace to this list means that any other Step or Sidecar that does not also request this Workspace will not have access to it.",
+							Description: "This is an alpha field. You must set the \"enable-api-fields\" feature flag to \"alpha\" for this field to be supported.\n\nIsolatedWorkspaces is a list of workspaces from the Task that this Step wants exclusive access to. Adding a workspace to this list means that any other Step or Sidecar that does not also request this Workspace will not have access to it.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -3402,12 +3521,57 @@ func schema_pkg_apis_pipeline_v1beta1_Step(ref common.ReferenceCallback) common.
 							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.StepOutputConfig"),
 						},
 					},
+					"params": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Mapping"),
+									},
+								},
+							},
+						},
+					},
+					"workspaces": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Mapping"),
+									},
+								},
+							},
+						},
+					},
+					"results": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Mapping"),
+									},
+								},
+							},
+						},
+					},
+					"stepRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Contains the reference to an existing step",
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.StepRef"),
+						},
+					},
 				},
 				Required: []string{"name"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.StepOutputConfig", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.WorkspaceUsage", "k8s.io/api/core/v1.ContainerPort", "k8s.io/api/core/v1.EnvFromSource", "k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.Lifecycle", "k8s.io/api/core/v1.Probe", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.SecurityContext", "k8s.io/api/core/v1.VolumeDevice", "k8s.io/api/core/v1.VolumeMount", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Mapping", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.StepOutputConfig", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.StepRef", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.WorkspaceUsage", "k8s.io/api/core/v1.ContainerPort", "k8s.io/api/core/v1.EnvFromSource", "k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.Lifecycle", "k8s.io/api/core/v1.Probe", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.SecurityContext", "k8s.io/api/core/v1.VolumeDevice", "k8s.io/api/core/v1.VolumeMount", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
 	}
 }
 
@@ -3421,6 +3585,25 @@ func schema_pkg_apis_pipeline_v1beta1_StepOutputConfig(ref common.ReferenceCallb
 					"path": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Path to duplicate stdout stream to on container's local filesystem.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1beta1_StepRef(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name of the referenced step",
 							Type:        []string{"string"},
 							Format:      "",
 						},

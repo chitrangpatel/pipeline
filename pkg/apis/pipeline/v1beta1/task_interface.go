@@ -28,3 +28,11 @@ type TaskObject interface {
 	TaskSpec() TaskSpec
 	Copy() TaskObject
 }
+
+// MyStepObject is implemented by Task and ClusterTask
+type MyStepObject interface {
+	apis.Defaultable
+	MyStepMetadata() metav1.ObjectMeta
+	MyStepSpec() Step
+	Copy() MyStepObject
+}

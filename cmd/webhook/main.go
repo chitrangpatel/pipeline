@@ -55,6 +55,7 @@ var types = map[schema.GroupVersionKind]resourcesemantics.GenericCRD{
 	v1alpha1.SchemeGroupVersion.WithKind("VerificationPolicy"): &v1alpha1.VerificationPolicy{},
 	// v1beta1
 	v1beta1.SchemeGroupVersion.WithKind("Pipeline"):    &v1beta1.Pipeline{},
+	v1beta1.SchemeGroupVersion.WithKind("Step"):        &v1beta1.MyStep{},
 	v1beta1.SchemeGroupVersion.WithKind("Task"):        &v1beta1.Task{},
 	v1beta1.SchemeGroupVersion.WithKind("ClusterTask"): &v1beta1.ClusterTask{},
 	v1beta1.SchemeGroupVersion.WithKind("TaskRun"):     &v1beta1.TaskRun{},
@@ -165,6 +166,13 @@ func newConversionController(ctx context.Context, cmw configmap.Watcher) *contro
 		// Specify the types of custom resource definitions that should be converted
 		// "HubVersion" is the stored version, and "Zygotes" are the supported versions
 		map[schema.GroupKind]conversion.GroupKindConversion{
+			v1.Kind("Step"): {
+				DefinitionName: pipeline.StepResource.String(),
+				HubVersion:     v1beta1GroupVersion,
+				Zygotes: map[string]conversion.ConvertibleObject{
+					v1beta1GroupVersion: &v1beta1.MyStep{},
+				},
+			},
 			v1.Kind("Task"): {
 				DefinitionName: pipeline.TaskResource.String(),
 				HubVersion:     v1beta1GroupVersion,
