@@ -1,0 +1,64 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: inner-child
+spec:
+  params:
+    - name: foo
+  results:
+    - name: result-foo 
+  steps:
+    - name: print-param
+      image: ubuntu
+      script: echo $(params.foo) | tee $(results.result-foo.path)
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: inner-child-2
+spec:
+  params:
+    - name: bar
+  results:
+    - name: result-bar 
+  steps:
+    - name: print-param
+      image: ubuntu
+      script: echo $(params.bar) | tee $(results.result-bar.path)
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: parent
+spec:
+  params:                      
+    - name: foo                
+    - name: bar                
+  steps:
+    - name: use-inner-child
+      uses:
+        taskRef:
+          name: inner-child
+        params:
+          - name: foo
+            value: $(params.foo)
+    - name: use-inner-child-2
+      uses:
+        taskRef:
+          name: inner-child-2
+        params:
+          - name: bar
+            value: $(params.bar)
+---
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: parent-uses-child
+spec:
+  params:                      
+    - name: foo               
+      value: "foo"
+    - name: bar                
+      value: "bar" 
+  taskRef:
+    name: parent

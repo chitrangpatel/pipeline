@@ -1,0 +1,78 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: git-clone
+spec:
+  workspaces:
+    - name: source
+  params:
+    - name: url
+    - name: repo-revision
+  steps:
+    - name: do-this
+      image: ubuntu
+      script: echo $(params.url)-$(params.repo-revision)
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: kaniko-build-and-push
+spec:
+  params:
+    - name: image-name
+  workspaces:
+    - name: code
+  steps:
+    - name: do-this
+      image: ubuntu
+      args: ["$(params.image-name)", "$(workspaces.code.path)"]
+      command:
+        - "echo"
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: clone-build-push
+spec:
+  workspaces:
+    - name: shared
+  params:
+    - name: repo-url
+    - name: repo-revision
+    - name: image-name
+  steps:
+    - name: clone
+      uses:
+        taskRef: 
+          name: git-clone
+        params:
+          - name: url
+            value: $(params.repo-url)
+        workspaces:
+          - name: source
+            workspace: shared
+    - name: build-and-push
+      uses:
+        taskRef: 
+          name: kaniko-build-and-push
+        workspaces:
+          - name: code
+            workspace: shared
+---
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: tasks-in-tasks-demo
+spec:
+  workspaces:                  
+    - name: shared             
+      emptyDir: {}             
+  params:                      
+    - name: repo-url                
+      value: https://github.com/tektoncd/pipeline.git
+    - name: repo-revision           
+      value: main 
+    - name: image-name
+      value: tektoncdpipelineimage
+  taskRef:
+    name: clone-build-push

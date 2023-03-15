@@ -186,6 +186,10 @@ type Step struct {
 	// +optional
 	Script string `json:"script,omitempty"`
 
+	// Uses is a struct that references a task.
+	// This is used if a step wants to reuse steps from another task.
+	Uses *Uses `json:"uses",omitempty`
+
 	// Timeout is the time after which the step times out. Defaults to never.
 	// Refer to Go's ParseDuration documentation for expected format: https://golang.org/pkg/time/#ParseDuration
 	// +optional
@@ -212,6 +216,13 @@ type Step struct {
 	// Stores configuration for the stderr stream of the step.
 	// +optional
 	StderrConfig *StepOutputConfig `json:"stderrConfig,omitempty"`
+}
+
+// Uses is a struct that references a task.
+type Uses struct {
+	TaskRef    *TaskRef                       `json:"taskRef,omitempty"`
+	Params     []Param                        `json:"params,omitempty"`
+	Workspaces []WorkspacePipelineTaskBinding `json:"workspaces,omitempty"`
 }
 
 // OnErrorType defines a list of supported exiting behavior of a container on error

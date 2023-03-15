@@ -1,0 +1,60 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: inner-child
+spec:
+  params:
+    - name: url
+  steps:
+    - name: inner-child-step
+      image: ubuntu
+      script: echo $(params.url)
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: inner-child-2
+spec:
+  params:
+    - name: url
+  steps:
+    - name: inner-child-2-step
+      image: ubuntu
+      script: echo I am meant to be a different url - $(params.url)
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: parent
+spec:
+  params:                      
+    - name: url1                
+    - name: url2                
+  steps:
+    - name: use-inner-child
+      uses:
+        taskRef:
+          name: inner-child
+        params:
+          - name: url
+            value: $(params.url1)
+    - name: use-inner-child-2
+      uses:
+        taskRef:
+          name: inner-child-2
+        params:
+          - name: url
+            value: $(params.url2)
+---
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: parent-uses-child
+spec:
+  params:                      
+    - name: url1               
+      value: https://github.com/kelseyhightower/nocode
+    - name: url2                
+      value: https://github.com/chitrangpatel/nocode
+  taskRef:
+    name: parent

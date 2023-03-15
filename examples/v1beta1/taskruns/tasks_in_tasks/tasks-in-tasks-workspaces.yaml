@@ -1,0 +1,57 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: inner-child
+spec:
+  workspaces:                  
+    - name: output            
+  steps:
+    - name: print-param
+      image: ubuntu
+      script: echo $(workspaces.output.path) 
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: inner-child-2
+spec:
+  workspaces:                  
+    - name: input            
+  steps:
+    - name: print-param
+      image: ubuntu
+      script: echo $(workspaces.input.path) 
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: parent
+spec:
+  workspaces:
+    - name: shared
+  steps:
+    - name: use-inner-child
+      uses:
+        taskRef:
+          name: inner-child
+        workspaces:                  
+          - name: output            
+            workspace: shared
+    - name: use-inner-child-2
+      uses:
+        taskRef:
+          name: inner-child-2
+        workspaces:                  
+          - name: input            
+            workspace: shared
+---
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: parent-uses-child
+spec:
+  workspaces:                      
+    - name: shared            
+      emptyDir: {}             
+  taskRef:
+    name: parent

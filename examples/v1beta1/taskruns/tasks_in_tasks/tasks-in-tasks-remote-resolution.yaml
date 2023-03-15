@@ -1,0 +1,70 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: remote-child
+spec:
+  params:
+    - name: repo-url
+  steps:
+    - name: use-inner-child
+      uses:
+        taskRef:
+          resolver: git
+          params:
+            - name: url              
+              value: https://github.com/tektoncd/catalog.git
+            - name: revision         
+              value: main            
+            - name: pathInRepo       
+              value: task/git-clone/0.8/git-clone.yaml
+        params:
+          - name: url
+            value: $(params.repo-url)
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: parent
+spec:
+  workspaces:                  
+    - name: output            
+      description: The git repo will be cloned onto the volume backing this Workspace.
+    - name: ssh-directory
+      optional: true
+    - name: basic-auth
+      optional: true
+    - name: ssl-ca-directory
+      optional: true
+  params:                      
+    - name: repo-url                
+    - name: revision
+  steps:
+    - name: use-remote-child
+      uses:
+        taskRef:
+          name: remote-child
+        params:
+          - name: repo-url
+            value: $(params.repo-url)
+    - name: parent-step
+      image: ubuntu
+      script: echo hello
+---
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: parent-uses-child
+spec:
+  workspaces:                  
+    - name: output             
+      emptyDir: {}             
+  podTemplate:                 
+    securityContext:           
+      fsGroup: 65532           
+  params:                      
+    - name: repo-url                
+      value: https://github.com/kelseyhightower/nocode
+    - name: revision           
+      value: master 
+  taskRef:
+    name: parent

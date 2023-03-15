@@ -48,6 +48,51 @@ var (
 )
 
 // ApplyParameters applies the params from a TaskRun.Input.Parameters to a TaskSpec
+func ApplyParameterReplacements(ctx context.Context, spec *v1beta1.TaskSpec, tr *v1beta1.TaskRun, defaults ...v1beta1.ParamSpec) (map[string]string, map[string][]string) {
+	// This assumes that the TaskRun inputs have been validated against what the Task requests.
+
+	// stringReplacements is used for standard single-string stringReplacements, while arrayReplacements contains arrays
+	// that need to be further processed.
+	stringReplacements := map[string]string{}
+	arrayReplacements := map[string][]string{}
+
+	// Set all the default stringReplacements
+	for _, p := range defaults {
+		if p.Default != nil {
+			switch p.Default.Type {
+			case v1beta1.ParamTypeArray:
+				for _, pattern := range paramPatterns {
+					// array indexing for param is beta feature
+					if config.CheckAlphaOrBetaAPIFields(ctx) {
+						for i := 0; i < len(p.Default.ArrayVal); i++ {
+							stringReplacements[fmt.Sprintf(pattern+"[%d]", p.Name, i)] = p.Default.ArrayVal[i]
+						}
+					}
+					arrayReplacements[fmt.Sprintf(pattern, p.Name)] = p.Default.ArrayVal
+				}
+			case v1beta1.ParamTypeObject:
+				for k, v := range p.Default.ObjectVal {
+					stringReplacements[fmt.Sprintf(objectIndividualVariablePattern, p.Name, k)] = v
+				}
+			default:
+				for _, pattern := range paramPatterns {
+					stringReplacements[fmt.Sprintf(pattern, p.Name)] = p.Default.StringVal
+				}
+			}
+		}
+	}
+	// Set and overwrite params with the ones from the TaskRun
+	trStrings, trArrays := paramsFromTaskRun(ctx, tr)
+	for k, v := range trStrings {
+		stringReplacements[k] = v
+	}
+	for k, v := range trArrays {
+		arrayReplacements[k] = v
+	}
+	return stringReplacements, arrayReplacements
+}
+
+// ApplyParameters applies the params from a TaskRun.Input.Parameters to a TaskSpec
 func ApplyParameters(ctx context.Context, spec *v1beta1.TaskSpec, tr *v1beta1.TaskRun, defaults ...v1beta1.ParamSpec) *v1beta1.TaskSpec {
 	// This assumes that the TaskRun inputs have been validated against what the Task requests.
 
@@ -91,6 +136,36 @@ func ApplyParameters(ctx context.Context, spec *v1beta1.TaskSpec, tr *v1beta1.Ta
 	}
 
 	return ApplyReplacements(spec, stringReplacements, arrayReplacements)
+}
+
+func paramsFromUses(ctx context.Context, ct *v1beta1.Uses) (map[string]string, map[string][]string) {
+	stringReplacements := map[string]string{}
+	arrayReplacements := map[string][]string{}
+
+	for _, p := range ct.Params {
+		switch p.Value.Type {
+		case v1beta1.ParamTypeArray:
+			for _, pattern := range paramPatterns {
+				// array indexing for param is beta feature
+				if config.CheckAlphaOrBetaAPIFields(ctx) {
+					for i := 0; i < len(p.Value.ArrayVal); i++ {
+						stringReplacements[fmt.Sprintf(pattern+"[%d]", p.Name, i)] = p.Value.ArrayVal[i]
+					}
+				}
+				arrayReplacements[fmt.Sprintf(pattern, p.Name)] = p.Value.ArrayVal
+			}
+		case v1beta1.ParamTypeObject:
+			for k, v := range p.Value.ObjectVal {
+				stringReplacements[fmt.Sprintf(objectIndividualVariablePattern, p.Name, k)] = v
+			}
+		default:
+			for _, pattern := range paramPatterns {
+				stringReplacements[fmt.Sprintf(pattern, p.Name)] = p.Value.StringVal
+			}
+		}
+	}
+
+	return stringReplacements, arrayReplacements
 }
 
 func paramsFromTaskRun(ctx context.Context, tr *v1beta1.TaskRun) (map[string]string, map[string][]string) {

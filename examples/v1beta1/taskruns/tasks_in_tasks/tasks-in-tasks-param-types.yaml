@@ -1,0 +1,83 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: inner-child
+spec:
+  params:
+    - name: object-param
+      type: object
+      properties:
+        foo: {type: string}
+        bar: {type: string}
+  steps:
+    - name: inner-child-step
+      image: ubuntu
+      command:
+        - "echo"
+      args: ["$(params.object-param.foo)", "$(params.object-param.bar)"]
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: inner-child-2
+spec:
+  params:
+    - name: array-param
+      type: array
+  steps:
+    - name: inner-child-2-step
+      image: ubuntu
+      command:
+        - "echo"
+      args:
+        - "$(params.array-param[*])"
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: parent
+spec:
+  params:
+    - name: object-param
+      type: object
+      properties:
+        foo: {type: string}
+        bar: {type: string}      
+    - name: array-param
+      type: array
+  steps:
+    - name: use-inner-child
+      uses:
+        taskRef:
+          name: inner-child
+        params:
+          - name: object-param
+            value:
+              foo: $(params.object-param.foo)
+              bar: $(params.object-param.bar)
+    - name: use-inner-child-2
+      uses:
+        taskRef:
+          name: inner-child-2
+        params:
+          - name: array-param
+            value:
+              - $(params.array-param[0])
+              - $(params.array-param[1])
+---
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: parent-uses-child
+spec:
+  params:                      
+    - name: object-param               
+      value:
+        foo: "1"
+        bar: "2" 
+    - name: array-param                
+      value:
+        - "foo"
+        - "bar" 
+  taskRef:
+    name: parent

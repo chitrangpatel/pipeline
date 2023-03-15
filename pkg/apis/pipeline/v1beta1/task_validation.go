@@ -218,7 +218,7 @@ func validateSteps(ctx context.Context, steps []Step) (errs *apis.FieldError) {
 }
 
 func validateStep(ctx context.Context, s Step, names sets.String) (errs *apis.FieldError) {
-	if s.Image == "" {
+	if s.Image == "" && s.Uses == nil {
 		errs = errs.Also(apis.ErrMissingField("Image"))
 	}
 
