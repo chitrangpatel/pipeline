@@ -62,6 +62,10 @@ func (trs *TaskRunSpec) ConvertTo(ctx context.Context, sink *v1.TaskRunSpec) err
 		sink.Debug = &v1.TaskRunDebug{}
 		trs.Debug.convertTo(ctx, sink.Debug)
 	}
+	if trs.Artifacts != nil {
+		sink.Artifacts = &v1.Artifacts{}
+		trs.Artifacts.convertTo(ctx, sink.Artifacts)
+	}
 	sink.Params = nil
 	for _, p := range trs.Params {
 		new := v1.Param{}
@@ -136,6 +140,11 @@ func (trs *TaskRunSpec) ConvertFrom(ctx context.Context, source *v1.TaskRunSpec)
 		newDebug := TaskRunDebug{}
 		newDebug.convertFrom(ctx, *source.Debug)
 		trs.Debug = &newDebug
+	}
+	if source.Artifacts != nil {
+		newArtifacts := Artifacts{}
+		newArtifacts.convertFrom(ctx, source.Artifacts)
+		trs.Artifacts = &newArtifacts
 	}
 	trs.Params = nil
 	for _, p := range source.Params {
@@ -239,6 +248,11 @@ func (trs *TaskRunStatus) ConvertTo(ctx context.Context, sink *v1.TaskRunStatus)
 		trr.convertTo(ctx, &new)
 		sink.Results = append(sink.Results, new)
 	}
+
+	if trs.Artifacts != nil {
+		sink.Artifacts = &v1.Artifacts{}
+		trs.Artifacts.convertTo(ctx, sink.Artifacts)
+	}
 	sink.Sidecars = nil
 	for _, sc := range trs.Sidecars {
 		new := v1.SidecarState{}
@@ -287,6 +301,11 @@ func (trs *TaskRunStatus) ConvertFrom(ctx context.Context, source v1.TaskRunStat
 		new := TaskRunResult{}
 		new.convertFrom(ctx, trr)
 		trs.TaskRunResults = append(trs.TaskRunResults, new)
+	}
+	if source.Artifacts != nil {
+		newArtifacts := Artifacts{}
+		newArtifacts.convertFrom(ctx, source.Artifacts)
+		trs.Artifacts = &newArtifacts
 	}
 	trs.Sidecars = nil
 	for _, sc := range source.Sidecars {

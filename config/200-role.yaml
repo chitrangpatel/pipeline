@@ -29,7 +29,7 @@ rules:
   - apiGroups: [""]
     resources: ["configmaps"]
     verbs: ["get"]
-    resourceNames: ["config-logging", "config-observability", "config-artifact-bucket", "config-artifact-pvc", "feature-flags", "config-leader-election", "config-registry-cert"]
+    resourceNames: ["config-logging", "config-observability", "config-artifact-bucket", "config-artifact-pvc", "feature-flags", "config-leader-election", "config-registry-cert", "artifact-config"]
 ---
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
@@ -48,7 +48,7 @@ rules:
   - apiGroups: [""]
     resources: ["configmaps"]
     verbs: ["get"]
-    resourceNames: ["config-logging", "config-observability", "config-leader-election", "feature-flags"]
+    resourceNames: ["config-logging", "config-observability", "config-leader-election", "feature-flags", "artifact-config"]
   - apiGroups: [""]
     resources: ["secrets"]
     verbs: ["list", "watch"]

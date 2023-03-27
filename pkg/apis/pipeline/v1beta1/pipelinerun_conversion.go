@@ -56,6 +56,10 @@ func (prs PipelineRunSpec) ConvertTo(ctx context.Context, sink *v1.PipelineRunSp
 			return err
 		}
 	}
+	if prs.Artifacts != nil {
+		sink.Artifacts = &v1.Artifacts{}
+		prs.Artifacts.convertTo(ctx, sink.Artifacts)
+	}
 	sink.Params = nil
 	for _, p := range prs.Params {
 		new := v1.Param{}
@@ -117,6 +121,11 @@ func (prs *PipelineRunSpec) ConvertFrom(ctx context.Context, source *v1.Pipeline
 			return err
 		}
 		prs.PipelineSpec = &newPipelineSpec
+	}
+	if source.Artifacts != nil {
+		newArtifacts := Artifacts{}
+		newArtifacts.convertFrom(ctx, source.Artifacts)
+		prs.Artifacts = &newArtifacts
 	}
 	prs.Params = nil
 	for _, p := range source.Params {
@@ -216,6 +225,12 @@ func (prs *PipelineRunStatus) convertTo(ctx context.Context, sink *v1.PipelineRu
 		pr.convertTo(ctx, &new)
 		sink.Results = append(sink.Results, new)
 	}
+
+	if prs.Artifacts != nil {
+		sink.Artifacts = &v1.Artifacts{}
+		prs.Artifacts.convertTo(ctx, sink.Artifacts)
+	}
+
 	if prs.PipelineSpec != nil {
 		sink.PipelineSpec = &v1.PipelineSpec{}
 		err := prs.PipelineSpec.ConvertTo(ctx, sink.PipelineSpec)
@@ -253,6 +268,11 @@ func (prs *PipelineRunStatus) convertFrom(ctx context.Context, source *v1.Pipeli
 		new := PipelineRunResult{}
 		new.convertFrom(ctx, pr)
 		prs.PipelineResults = append(prs.PipelineResults, new)
+	}
+	if source.Artifacts != nil {
+		newArtifacts := Artifacts{}
+		newArtifacts.convertFrom(ctx, source.Artifacts)
+		prs.Artifacts = &newArtifacts
 	}
 	if source.PipelineSpec != nil {
 		newPipelineSpec := PipelineSpec{}

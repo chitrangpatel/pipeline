@@ -71,6 +71,9 @@ type Entrypointer struct {
 
 	// Results is the set of files that might contain task results
 	Results []string
+	// Artifacts is the set of files that might contain task results
+	Artifacts []string
+	// Timeout is an optional user-specified duration within which the Step must complete
 	// Timeout is an optional user-specified duration within which the Step must complete
 	Timeout *time.Duration
 	// BreakpointOnFailure helps determine if entrypoint execution needs to adapt debugging requirements
@@ -200,6 +203,12 @@ func (e Entrypointer) Go() error {
 			logger.Fatalf("Error while handling results: %s", err)
 		}
 	}
+	if len(e.Artifacts) >= 1 && e.Artifacts[0] != "" {
+		if err := e.readArtifactsFromDisk(ctx, pipeline.DefaultArtifactPath); err != nil {
+			logger.Fatalf("Error while handling results: %s", err)
+		}
+
+	}
 
 	return err
 }
@@ -236,6 +245,33 @@ func (e Entrypointer) readResultsFromDisk(ctx context.Context, resultDir string)
 		if err := termination.WriteMessage(e.TerminationPath, output); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func (e Entrypointer) readArtifactsFromDisk(ctx context.Context, artifactDir string) error {
+	output := []v1beta1.PipelineResourceResult{}
+	for _, artifactFile := range e.Artifacts {
+		if artifactFile == "" {
+			continue
+		}
+		fileContents, err := os.ReadFile(filepath.Join(artifactDir, artifactFile))
+		if os.IsNotExist(err) {
+			continue
+		} else if err != nil {
+			return err
+		}
+		// if the file doesn't exist, ignore it
+		output = append(output, v1beta1.PipelineResourceResult{
+			Key:        artifactFile,
+			Value:      string(fileContents),
+			ResultType: v1beta1.ArtifactType,
+		})
+	}
+
+	// push output to termination path
+	if err := termination.WriteMessage(e.TerminationPath, output); err != nil {
+		return err
 	}
 	return nil
 }

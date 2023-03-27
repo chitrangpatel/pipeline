@@ -21,6 +21,12 @@ const (
 	WorkspaceDir = "/workspace"
 	// DefaultResultPath is the path for a task result to create the result file
 	DefaultResultPath = "/tekton/results"
+	// DefaultArtifactPath is the path for a task artifact to create the artifact file
+	DefaultArtifactPath = "/tekton/artifacts"
+	// DefaultInputArtifactLocation is the path for a task artifact to create the artifact file
+	DefaultInputArtifactLocation = "/tekton/artifacts/inputs"
+	// DefaultOutputArtifactLocation is the path for a task artifact to create the artifact file
+	DefaultOutputArtifactLocation = "/tekton/artifacts/outputs"
 	// HomeDir is the HOME directory of PipelineResources
 	HomeDir = "/tekton/home"
 	// CredsDir is the directory where credentials are placed to meet the legacy credentials

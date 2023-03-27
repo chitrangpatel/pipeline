@@ -226,6 +226,9 @@ type PipelineRunSpec struct {
 	// Params is a list of parameter names and values.
 	// +listType=atomic
 	Params []Param `json:"params,omitempty"`
+
+	Artifacts *Artifacts `json:"artifacts,omitempty"`
+
 	// +optional
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 
@@ -433,6 +436,8 @@ type PipelineRunStatusFields struct {
 	// +optional
 	// +listType=atomic
 	PipelineResults []PipelineRunResult `json:"pipelineResults,omitempty"`
+
+	Artifacts *Artifacts `json:"artifacts,omitempty"`
 
 	// PipelineRunSpec contains the exact spec used to instantiate the run
 	PipelineSpec *PipelineSpec `json:"pipelineSpec,omitempty"`

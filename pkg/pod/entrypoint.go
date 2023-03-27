@@ -160,6 +160,9 @@ func orderContainers(commonExtraEntrypointArgs []string, steps []corev1.Containe
 				}
 			}
 			argsForEntrypoint = append(argsForEntrypoint, resultArgument(steps, taskSpec.Results)...)
+			if taskSpec.Artifacts != nil {
+				argsForEntrypoint = append(argsForEntrypoint, artifactArgument(steps, taskSpec.Artifacts.Outputs)...)
+			}
 		}
 
 		if breakpointConfig != nil && len(breakpointConfig.Breakpoint) > 0 {
@@ -207,6 +210,21 @@ func collectResultsName(results []v1beta1.TaskResult) string {
 		resultNames = append(resultNames, r.Name)
 	}
 	return strings.Join(resultNames, ",")
+}
+
+func artifactArgument(steps []corev1.Container, artifacts []v1beta1.Artifact) []string {
+	if len(artifacts) == 0 {
+		return nil
+	}
+	return []string{"-artifacts", collectArtifactsName(artifacts)}
+}
+
+func collectArtifactsName(artifacts []v1beta1.Artifact) string {
+	var artifactNames []string
+	for _, a := range artifacts {
+		artifactNames = append(artifactNames, a.Name)
+	}
+	return strings.Join(artifactNames, ",")
 }
 
 var replaceReadyPatchBytes []byte

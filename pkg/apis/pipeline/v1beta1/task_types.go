@@ -32,6 +32,8 @@ const (
 
 	// InternalTektonResultType default internal tekton result value
 	InternalTektonResultType = 3
+	// ArtifactType default internal tekton result value
+	ArtifactType = 4
 	// UnknownResultType default unknown result type value
 	UnknownResultType = 10
 )
@@ -119,6 +121,10 @@ type TaskSpec struct {
 	// Results are values that this Task can output
 	// +listType=atomic
 	Results []TaskResult `json:"results,omitempty"`
+
+	// Artifacts that this Task can take as input/output
+	// +listType=atomic
+	Artifacts *Artifacts `json:"artifacts,omitempty"`
 }
 
 // TaskList contains a list of Task

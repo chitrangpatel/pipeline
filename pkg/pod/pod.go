@@ -75,6 +75,9 @@ var (
 		Name:      "tekton-internal-results",
 		MountPath: pipeline.DefaultResultPath,
 	}, {
+		Name:      "tekton-internal-artifacts",
+		MountPath: pipeline.DefaultArtifactPath,
+	}, {
 		Name:      "tekton-internal-steps",
 		MountPath: pipeline.StepsDir,
 		ReadOnly:  true,
@@ -87,6 +90,9 @@ var (
 		VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
 	}, {
 		Name:         "tekton-internal-results",
+		VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
+	}, {
+		Name:         "tekton-internal-artifacts",
 		VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
 	}, {
 		Name:         "tekton-internal-steps",
@@ -127,6 +133,37 @@ func (b *Builder) Build(ctx context.Context, taskRun *v1beta1.TaskRun, taskSpec 
 	// Add our implicit volumes first, so they can be overridden by the user if they prefer.
 	volumes = append(volumes, implicitVolumes...)
 	volumeMounts = append(volumeMounts, implicitVolumeMounts...)
+	artifactVolumes := []corev1.Volume{}
+	artifactMounts := []corev1.VolumeMount{}
+	if taskSpec.Artifacts != nil {
+		for _, artifact := range taskSpec.Artifacts.Inputs {
+			mount := corev1.VolumeMount{
+				Name:      fmt.Sprintf("tekton-internal-input-artifacts-locations-%s", artifact.Name),
+				MountPath: fmt.Sprintf("%s/%s", pipeline.DefaultInputArtifactLocation, artifact.Name),
+			}
+			volume := corev1.Volume{
+				Name:         fmt.Sprintf("tekton-internal-input-artifacts-locations-%s", artifact.Name),
+				VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
+			}
+			artifactVolumes = append(artifactVolumes, volume)
+			artifactMounts = append(artifactMounts, mount)
+
+		}
+		for _, artifact := range taskSpec.Artifacts.Outputs {
+			mount := corev1.VolumeMount{
+				Name:      fmt.Sprintf("tekton-internal-output-artifacts-locations-%s", artifact.Name),
+				MountPath: fmt.Sprintf("%s/%s", pipeline.DefaultOutputArtifactLocation, artifact.Name),
+			}
+			volume := corev1.Volume{
+				Name:         fmt.Sprintf("tekton-internal-output-artifacts-locations-%s", artifact.Name),
+				VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
+			}
+			artifactVolumes = append(artifactVolumes, volume)
+			artifactMounts = append(artifactMounts, mount)
+		}
+	}
+	volumes = append(volumes, artifactVolumes...)
+	volumeMounts = append(volumeMounts, artifactMounts...)
 
 	// Create Volumes and VolumeMounts for any credentials found in annotated
 	// Secrets, along with any arguments needed by Step entrypoints to process

@@ -1,0 +1,77 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: git-clone
+spec:
+  artifacts:
+    inputs:
+      - name: source
+        description: The precise source code that was fetched by this Task.
+        value: ""
+  steps:
+    - name: clone
+      image: alpine 
+      script: |
+        #!/usr/bin/env sh
+        echo -n "{\"uri\":\"$(artifacts.inputs.source.uri)\",\"digest\":\"$(artifacts.inputs.source.digest)\"}"  | tee $(artifacts.inputs.source.location)
+        sleep 1
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: gcs-upload
+spec:
+  artifacts:
+    outputs:
+      - name: blob
+        description: The blob that this task is uploading to GCS.
+        value: ""
+  steps:
+    - name: upload
+      image: alpine 
+      script: |
+        #!/usr/bin/env sh
+        cat $(artifacts.outputs.blob.location)
+        echo -n "{\"uri\":\"$(artifacts.outputs.blob.uri)\",\"digest\":\"SHA\"}" | tee $(artifacts.outputs.blob.path)
+        sleep 10
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: golang-test
+spec:
+  artifacts:
+    inputs:
+      - name: source
+        description: The source code used to create the image.
+        value: ""
+    outputs:
+      - name: blob
+        description: Coverage report that was just built.
+        value: ""
+  steps:
+    - name: run-go-test
+      image: alpine 
+      script: cp $(artifacts.inputs.source.location) $(artifacts.outputs.blob.location)
+---
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: tasks-in-tasks-for-artifacts
+spec:
+  artifacts:
+    inputs:
+      - name: source
+        value:
+          uri: https://github.com/foo/bar.git
+          digest: abcd1234
+        taskRef:
+          name: git-clone
+    outputs:
+      - name: blob
+        value:
+          uri: gs://my-gcs-bucket/repo/previous/v20230329-05f113cf86/coverage/coverage.html
+        taskRef:
+          name: gcs-upload
+  taskRef:
+    name: golang-test

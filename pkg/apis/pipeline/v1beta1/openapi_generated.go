@@ -32,6 +32,10 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 	return map[string]common.OpenAPIDefinition{
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/pod.AffinityAssistantTemplate":           schema_pkg_apis_pipeline_pod_AffinityAssistantTemplate(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/pod.Template":                            schema_pkg_apis_pipeline_pod_Template(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Artifact":                        schema_pkg_apis_pipeline_v1beta1_Artifact(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.ArtifactRef":                     schema_pkg_apis_pipeline_v1beta1_ArtifactRef(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.ArtifactiValue":                  schema_pkg_apis_pipeline_v1beta1_ArtifactiValue(ref),
+		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Artifacts":                       schema_pkg_apis_pipeline_v1beta1_Artifacts(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.ChildStatusReference":            schema_pkg_apis_pipeline_v1beta1_ChildStatusReference(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.CloudEventDelivery":              schema_pkg_apis_pipeline_v1beta1_CloudEventDelivery(ref),
 		"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.CloudEventDeliveryState":         schema_pkg_apis_pipeline_v1beta1_CloudEventDeliveryState(ref),
@@ -389,6 +393,164 @@ func schema_pkg_apis_pipeline_pod_Template(ref common.ReferenceCallback) common.
 		},
 		Dependencies: []string{
 			"k8s.io/api/core/v1.Affinity", "k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.HostAlias", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PodDNSConfig", "k8s.io/api/core/v1.PodSecurityContext", "k8s.io/api/core/v1.Toleration", "k8s.io/api/core/v1.TopologySpreadConstraint", "k8s.io/api/core/v1.Volume"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1beta1_Artifact(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name the given name",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"description": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Description is a human-readable description of the result",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"value": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Value the given value of the result",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.ParamValue"),
+						},
+					},
+					"taskRef": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRef"),
+						},
+					},
+					"type": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"name"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.ParamValue", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRef"},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1beta1_ArtifactRef(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ArtifactRef is a type that represents a reference to a task run artifact",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"pipelineTask": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+					"artifact": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+					"artifactsIndex": {
+						SchemaProps: spec.SchemaProps{
+							Default: 0,
+							Type:    []string{"integer"},
+							Format:  "int32",
+						},
+					},
+					"property": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+				},
+				Required: []string{"pipelineTask", "artifact", "artifactsIndex", "property"},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1beta1_ArtifactiValue(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"uri": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+					"digest": {
+						SchemaProps: spec.SchemaProps{
+							Default: "",
+							Type:    []string{"string"},
+							Format:  "",
+						},
+					},
+				},
+				Required: []string{"uri", "digest"},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_pipeline_v1beta1_Artifacts(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TaskResult used to describe the results of a task",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"inputs": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Artifact"),
+									},
+								},
+							},
+						},
+					},
+					"outputs": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Artifact"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Artifact"},
 	}
 }
 
@@ -1051,11 +1213,22 @@ func schema_pkg_apis_pipeline_v1beta1_EmbeddedTask(ref common.ReferenceCallback)
 							},
 						},
 					},
+					"artifacts": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Artifacts that this Task can take as input/output",
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Artifacts"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.ParamSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineTaskMetadata", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Sidecar", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Step", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.StepTemplate", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskResult", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.WorkspaceDeclaration", "k8s.io/api/core/v1.Volume", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Artifacts", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.ParamSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineTaskMetadata", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Sidecar", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Step", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.StepTemplate", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskResult", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.WorkspaceDeclaration", "k8s.io/api/core/v1.Volume", "k8s.io/apimachinery/pkg/runtime.RawExtension"},
 	}
 }
 
@@ -1725,6 +1898,11 @@ func schema_pkg_apis_pipeline_v1beta1_PipelineRunSpec(ref common.ReferenceCallba
 							},
 						},
 					},
+					"artifacts": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Artifacts"),
+						},
+					},
 					"serviceAccountName": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
@@ -1798,7 +1976,7 @@ func schema_pkg_apis_pipeline_v1beta1_PipelineRunSpec(ref common.ReferenceCallba
 			},
 		},
 		Dependencies: []string{
-			"github.com/tektoncd/pipeline/pkg/apis/pipeline/pod.Template", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Param", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineRef", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineTaskRunSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TimeoutFields", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.WorkspaceBinding", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/pod.Template", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Artifacts", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Param", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineRef", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineTaskRunSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TimeoutFields", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.WorkspaceBinding", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
 	}
 }
 
@@ -1911,6 +2089,11 @@ func schema_pkg_apis_pipeline_v1beta1_PipelineRunStatus(ref common.ReferenceCall
 							},
 						},
 					},
+					"artifacts": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Artifacts"),
+						},
+					},
 					"pipelineSpec": {
 						SchemaProps: spec.SchemaProps{
 							Description: "PipelineRunSpec contains the exact spec used to instantiate the run",
@@ -1987,7 +2170,7 @@ func schema_pkg_apis_pipeline_v1beta1_PipelineRunStatus(ref common.ReferenceCall
 			},
 		},
 		Dependencies: []string{
-			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.ChildStatusReference", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineRunResult", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineRunRunStatus", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineRunTaskRunStatus", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Provenance", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.SkippedTask", "k8s.io/apimachinery/pkg/apis/meta/v1.Time", "knative.dev/pkg/apis.Condition"},
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Artifacts", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.ChildStatusReference", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineRunResult", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineRunRunStatus", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineRunTaskRunStatus", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Provenance", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.SkippedTask", "k8s.io/apimachinery/pkg/apis/meta/v1.Time", "knative.dev/pkg/apis.Condition"},
 	}
 }
 
@@ -2057,6 +2240,11 @@ func schema_pkg_apis_pipeline_v1beta1_PipelineRunStatusFields(ref common.Referen
 							},
 						},
 					},
+					"artifacts": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Artifacts"),
+						},
+					},
 					"pipelineSpec": {
 						SchemaProps: spec.SchemaProps{
 							Description: "PipelineRunSpec contains the exact spec used to instantiate the run",
@@ -2133,7 +2321,7 @@ func schema_pkg_apis_pipeline_v1beta1_PipelineRunStatusFields(ref common.Referen
 			},
 		},
 		Dependencies: []string{
-			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.ChildStatusReference", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineRunResult", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineRunRunStatus", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineRunTaskRunStatus", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Provenance", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.SkippedTask", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Artifacts", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.ChildStatusReference", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineRunResult", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineRunRunStatus", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineRunTaskRunStatus", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Provenance", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.SkippedTask", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -2274,6 +2462,17 @@ func schema_pkg_apis_pipeline_v1beta1_PipelineSpec(ref common.ReferenceCallback)
 							},
 						},
 					},
+					"artifacts": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Artifacts that this Task can take as input/output",
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Artifacts"),
+						},
+					},
 					"finally": {
 						VendorExtensible: spec.VendorExtensible{
 							Extensions: spec.Extensions{
@@ -2297,7 +2496,7 @@ func schema_pkg_apis_pipeline_v1beta1_PipelineSpec(ref common.ReferenceCallback)
 			},
 		},
 		Dependencies: []string{
-			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.ParamSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineResult", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineTask", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineWorkspaceDeclaration"},
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Artifacts", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.ParamSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineResult", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineTask", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineWorkspaceDeclaration"},
 	}
 }
 
@@ -2387,6 +2586,17 @@ func schema_pkg_apis_pipeline_v1beta1_PipelineTask(ref common.ReferenceCallback)
 							},
 						},
 					},
+					"artifacts": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Artifacts that this Task can take as input/output",
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Artifacts"),
+						},
+					},
 					"matrix": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Matrix declares parameters used to fan out this task.",
@@ -2422,7 +2632,7 @@ func schema_pkg_apis_pipeline_v1beta1_PipelineTask(ref common.ReferenceCallback)
 			},
 		},
 		Dependencies: []string{
-			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.EmbeddedTask", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Matrix", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Param", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRef", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.WhenExpression", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.WorkspacePipelineTaskBinding", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Artifacts", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.EmbeddedTask", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Matrix", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Param", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRef", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.WhenExpression", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.WorkspacePipelineTaskBinding", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
 	}
 }
 
@@ -4196,12 +4406,17 @@ func schema_pkg_apis_pipeline_v1beta1_TaskRunSpec(ref common.ReferenceCallback) 
 							Ref: ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRunDebug"),
 						},
 					},
-					"params": {
+					"artifacts": {
 						VendorExtensible: spec.VendorExtensible{
 							Extensions: spec.Extensions{
 								"x-kubernetes-list-type": "atomic",
 							},
 						},
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Artifacts"),
+						},
+					},
+					"params": {
 						SchemaProps: spec.SchemaProps{
 							Type: []string{"array"},
 							Items: &spec.SchemaOrArray{
@@ -4332,7 +4547,7 @@ func schema_pkg_apis_pipeline_v1beta1_TaskRunSpec(ref common.ReferenceCallback) 
 			},
 		},
 		Dependencies: []string{
-			"github.com/tektoncd/pipeline/pkg/apis/pipeline/pod.Template", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Param", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRef", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRunDebug", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRunSidecarOverride", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRunStepOverride", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.WorkspaceBinding", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/pod.Template", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Artifacts", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Param", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRef", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRunDebug", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRunSidecarOverride", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRunStepOverride", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.WorkspaceBinding", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
 	}
 }
 
@@ -4501,6 +4716,17 @@ func schema_pkg_apis_pipeline_v1beta1_TaskRunStatus(ref common.ReferenceCallback
 							},
 						},
 					},
+					"artifacts": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Artifacts are the list of results written out by the task's containers",
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Artifacts"),
+						},
+					},
 					"sidecars": {
 						VendorExtensible: spec.VendorExtensible{
 							Extensions: spec.Extensions{
@@ -4553,7 +4779,7 @@ func schema_pkg_apis_pipeline_v1beta1_TaskRunStatus(ref common.ReferenceCallback
 			},
 		},
 		Dependencies: []string{
-			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.CloudEventDelivery", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineResourceResult", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Provenance", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.SidecarState", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.StepState", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRunResult", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRunStatus", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.Time", "knative.dev/pkg/apis.Condition"},
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Artifacts", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.CloudEventDelivery", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineResourceResult", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Provenance", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.SidecarState", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.StepState", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRunResult", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRunStatus", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.Time", "knative.dev/pkg/apis.Condition"},
 	}
 }
 
@@ -4679,6 +4905,17 @@ func schema_pkg_apis_pipeline_v1beta1_TaskRunStatusFields(ref common.ReferenceCa
 							},
 						},
 					},
+					"artifacts": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Artifacts are the list of results written out by the task's containers",
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Artifacts"),
+						},
+					},
 					"sidecars": {
 						VendorExtensible: spec.VendorExtensible{
 							Extensions: spec.Extensions{
@@ -4731,7 +4968,7 @@ func schema_pkg_apis_pipeline_v1beta1_TaskRunStatusFields(ref common.ReferenceCa
 			},
 		},
 		Dependencies: []string{
-			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.CloudEventDelivery", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineResourceResult", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Provenance", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.SidecarState", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.StepState", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRunResult", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRunStatus", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Artifacts", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.CloudEventDelivery", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.PipelineResourceResult", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Provenance", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.SidecarState", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.StepState", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRunResult", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRunStatus", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -4900,11 +5137,22 @@ func schema_pkg_apis_pipeline_v1beta1_TaskSpec(ref common.ReferenceCallback) com
 							},
 						},
 					},
+					"artifacts": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Artifacts that this Task can take as input/output",
+							Ref:         ref("github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Artifacts"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.ParamSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Sidecar", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Step", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.StepTemplate", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskResult", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.WorkspaceDeclaration", "k8s.io/api/core/v1.Volume"},
+			"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Artifacts", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.ParamSpec", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Sidecar", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.Step", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.StepTemplate", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskResult", "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.WorkspaceDeclaration", "k8s.io/api/core/v1.Volume"},
 	}
 }
 

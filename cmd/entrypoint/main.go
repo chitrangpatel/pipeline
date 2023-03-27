@@ -47,6 +47,7 @@ var (
 	postFile            = flag.String("post_file", "", "If specified, file to write upon completion")
 	terminationPath     = flag.String("termination_path", "/tekton/termination", "If specified, file to write upon termination")
 	results             = flag.String("results", "", "If specified, list of file names that might contain task results")
+	artifacts           = flag.String("artifacts", "", "If specified, list of file names that might contain output artifacts")
 	timeout             = flag.Duration("timeout", time.Duration(0), "If specified, sets timeout for step")
 	stdoutPath          = flag.String("stdout_path", "", "If specified, file to copy stdout to")
 	stderrPath          = flag.String("stderr_path", "", "If specified, file to copy stderr to")
@@ -158,6 +159,7 @@ func main() {
 		},
 		PostWriter:             &realPostWriter{},
 		Results:                strings.Split(*results, ","),
+		Artifacts:              strings.Split(*artifacts, ","),
 		Timeout:                timeout,
 		BreakpointOnFailure:    *breakpointOnFailure,
 		OnError:                *onError,

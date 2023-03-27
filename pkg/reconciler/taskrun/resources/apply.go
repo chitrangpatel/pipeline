@@ -34,7 +34,9 @@ import (
 
 const (
 	// objectIndividualVariablePattern is the reference pattern for object individual keys params.<object_param_name>.<key_name>
-	objectIndividualVariablePattern = "params.%s.%s"
+	objectIndividualVariablePattern       = "params.%s.%s"
+	objectIndividualInputArtifactPattern  = "artifacts.inputs.%s.%s"
+	objectIndividualOutputArtifactPattern = "artifacts.outputs.%s.%s"
 )
 
 var (
@@ -229,6 +231,79 @@ func ApplyTaskResults(spec *v1beta1.TaskSpec) *v1beta1.TaskSpec {
 	for _, result := range spec.Results {
 		for _, pattern := range patterns {
 			stringReplacements[fmt.Sprintf(pattern, result.Name)] = filepath.Join(pipeline.DefaultResultPath, result.Name)
+		}
+	}
+	return ApplyReplacements(spec, stringReplacements, map[string][]string{})
+}
+
+func artifactsFromTaskRun(ctx context.Context, tr *v1beta1.TaskRun) map[string]string {
+	// stringReplacements is used for standard single-string stringReplacements, while arrayReplacements contains arrays
+	// that need to be further processed.
+	stringReplacements := map[string]string{}
+
+	if tr.Spec.Artifacts != nil {
+		for _, a := range tr.Spec.Artifacts.Inputs {
+			switch a.Value.Type {
+			case v1beta1.ParamTypeObject:
+				for k, v := range a.Value.ObjectVal {
+					stringReplacements[fmt.Sprintf(objectIndividualInputArtifactPattern, a.Name, k)] = v
+				}
+			default:
+				for _, pattern := range paramPatterns {
+					stringReplacements[fmt.Sprintf(pattern, a.Name)] = a.Value.StringVal
+				}
+			}
+		}
+		for _, a := range tr.Spec.Artifacts.Outputs {
+			switch a.Value.Type {
+			case v1beta1.ParamTypeObject:
+				for k, v := range a.Value.ObjectVal {
+					stringReplacements[fmt.Sprintf(objectIndividualOutputArtifactPattern, a.Name, k)] = v
+				}
+			default:
+				for _, pattern := range paramPatterns {
+					stringReplacements[fmt.Sprintf(pattern, a.Name)] = a.Value.StringVal
+				}
+			}
+		}
+	}
+	return stringReplacements
+}
+
+// ApplyTaskArtifacts applies the substitution from values in results which are referenced in spec as subitems
+// of the replacementStr.
+func ApplyTaskArtifacts(ctx context.Context, spec *v1beta1.TaskSpec, tr *v1beta1.TaskRun) *v1beta1.TaskSpec {
+	stringReplacements := map[string]string{}
+	// Set and overwrite params with the ones from the TaskRun
+	trStrings := artifactsFromTaskRun(ctx, tr)
+	for k, v := range trStrings {
+		stringReplacements[k] = v
+	}
+	outputPatterns := []string{
+		"artifacts.outputs.%s.path",
+		"artifacts.outputs[%q].path",
+		"artifacts.outputs['%s'].path",
+	}
+	outputLocationPatterns := []string{
+		"artifacts.outputs.%s.location",
+	}
+	inputLocationPatterns := []string{
+		"artifacts.inputs.%s.location",
+	}
+
+	if spec.Artifacts != nil {
+		for _, inputArt := range spec.Artifacts.Inputs {
+			for _, pattern := range inputLocationPatterns {
+				stringReplacements[fmt.Sprintf(pattern, inputArt.Name)] = filepath.Join(pipeline.DefaultInputArtifactLocation, inputArt.Name)
+			}
+		}
+		for _, outputArt := range spec.Artifacts.Outputs {
+			for _, pattern := range outputPatterns {
+				stringReplacements[fmt.Sprintf(pattern, outputArt.Name)] = filepath.Join(pipeline.DefaultArtifactPath, outputArt.Name)
+			}
+			for _, pattern := range outputLocationPatterns {
+				stringReplacements[fmt.Sprintf(pattern, outputArt.Name)] = filepath.Join(pipeline.DefaultOutputArtifactLocation, outputArt.Name)
+			}
 		}
 	}
 	return ApplyReplacements(spec, stringReplacements, map[string][]string{})

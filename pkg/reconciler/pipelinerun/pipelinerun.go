@@ -511,6 +511,7 @@ func (c *Reconciler) reconcile(ctx context.Context, pr *v1beta1.PipelineRun, get
 
 	// Apply parameter substitution from the PipelineRun
 	pipelineSpec = resources.ApplyParameters(ctx, pipelineSpec, pr)
+	pipelineSpec = resources.ApplyArtifactTaskRef(ctx, pipelineSpec, pr)
 	pipelineSpec = resources.ApplyContexts(pipelineSpec, pipelineMeta.Name, pr)
 	pipelineSpec = resources.ApplyWorkspaces(pipelineSpec, pr)
 	// Update pipelinespec of pipelinerun's status field
@@ -697,6 +698,21 @@ func (c *Reconciler) reconcile(ctx context.Context, pr *v1beta1.PipelineRun, get
 			pr.Status.MarkFailed(ReasonFailedValidation, err.Error())
 			return err
 		}
+		if pipelineSpec.Artifacts != nil {
+			pr.Status.Artifacts = &v1beta1.Artifacts{}
+			pr.Status.Artifacts.Inputs, err = resources.ApplyTaskArtifactsToPipelineArtifacts(ctx, pipelineSpec.Artifacts.Inputs,
+				pipelineRunFacts.State.GetTaskRunsArtifacts(), pr.Status.SkippedTasks)
+			if err != nil {
+				pr.Status.MarkFailed(ReasonFailedValidation, err.Error())
+				return err
+			}
+			pr.Status.Artifacts.Outputs, err = resources.ApplyTaskArtifactsToPipelineArtifacts(ctx, pipelineSpec.Artifacts.Outputs,
+				pipelineRunFacts.State.GetTaskRunsArtifacts(), pr.Status.SkippedTasks)
+			if err != nil {
+				pr.Status.MarkFailed(ReasonFailedValidation, err.Error())
+				return err
+			}
+		}
 	}
 
 	logger.Infof("PipelineRun %s status is being set to %s", pr.Name, after)
@@ -726,8 +742,15 @@ func (c *Reconciler) runNextSchedulableTask(ctx context.Context, pr *v1beta1.Pip
 		pr.Status.MarkFailed(ReasonInvalidTaskResultReference, err.Error())
 		return controller.NewPermanentError(err)
 	}
-
 	resources.ApplyTaskResults(nextRpts, resolvedResultRefs)
+
+	resolvedArtifactRefs, _, err := resources.ResolveArtifactRefs(pipelineRunFacts.State, nextRpts)
+	if err != nil {
+		logger.Infof("Failed to resolve task artifact reference for %q with error %v", pr.Name, err)
+		pr.Status.MarkFailed(ReasonInvalidTaskResultReference, err.Error())
+		return controller.NewPermanentError(err)
+	}
+	resources.ApplyTaskArtifacts(nextRpts, resolvedArtifactRefs)
 	// After we apply Task Results, we may be able to evaluate more
 	// when expressions, so reset the skipped cache
 	pipelineRunFacts.ResetSkippedCache()
@@ -747,6 +770,12 @@ func (c *Reconciler) runNextSchedulableTask(ctx context.Context, pr *v1beta1.Pip
 				continue
 			}
 			resources.ApplyTaskResults(resources.PipelineRunState{rpt}, resolvedResultRefs)
+			resolvedArtifactRefs, _, err := resources.ResolveArtifactRef(pipelineRunFacts.State, rpt)
+			if err != nil {
+				logger.Infof("Final task %q is not executed as it could not resolve task artifacts for %q: %v", rpt.PipelineTask.Name, pr.Name, err)
+				continue
+			}
+			resources.ApplyTaskArtifacts(resources.PipelineRunState{rpt}, resolvedArtifactRefs)
 			nextRpts = append(nextRpts, rpt)
 		}
 	}
@@ -845,6 +874,7 @@ func (c *Reconciler) createTaskRun(ctx context.Context, taskRunName string, para
 		Spec: v1beta1.TaskRunSpec{
 			Retries:            rpt.PipelineTask.Retries,
 			Params:             params,
+			Artifacts:          rpt.PipelineTask.Artifacts,
 			ServiceAccountName: taskRunSpec.TaskServiceAccountName,
 			PodTemplate:        taskRunSpec.TaskPodTemplate,
 			StepOverrides:      taskRunSpec.StepOverrides,

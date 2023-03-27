@@ -338,7 +338,7 @@ func (c *Reconciler) prepare(ctx context.Context, tr *v1beta1.TaskRun) (*v1beta1
 	}
 	getTaskfunc := resources.GetTaskFuncFromTaskRun(ctx, c.KubeClientSet, c.PipelineClientSet, c.resolutionRequester, tr, vp)
 
-	taskMeta, taskSpec, err := resources.GetTaskData(ctx, tr, getTaskfunc)
+	taskMeta, taskSpec, err := resources.GetTaskData(ctx, tr, getTaskfunc, c.KubeClientSet, c.PipelineClientSet, c.resolutionRequester, vp)
 	switch {
 	case errors.Is(err, remote.ErrRequestInProgress):
 		message := fmt.Sprintf("TaskRun %s/%s awaiting remote resource", tr.Namespace, tr.Name)
@@ -772,6 +772,9 @@ func applyParamsContextsResultsAndWorkspaces(ctx context.Context, tr *v1beta1.Ta
 
 	// Apply task result substitution
 	ts = resources.ApplyTaskResults(ts)
+
+	// Apply artifact result substitution
+	ts = resources.ApplyTaskArtifacts(ctx, ts, tr)
 
 	// Apply step exitCode path substitution
 	ts = resources.ApplyStepExitCodePath(ts)

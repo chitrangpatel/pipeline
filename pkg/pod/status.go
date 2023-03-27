@@ -181,7 +181,7 @@ func setTaskRunStatusBasedOnStepStatus(ctx context.Context, logger *zap.SugaredL
 		}
 
 		// populate task run CRD with results from sidecar logs
-		taskResults, pipelineResourceResults, _ := filterResultsAndResources(sidecarLogResults, specResults)
+		_, taskResults, pipelineResourceResults, _ := filterResultsAndResources(sidecarLogResults, specResults)
 		if tr.IsSuccessful() {
 			trs.TaskRunResults = append(trs.TaskRunResults, taskResults...)
 			trs.ResourcesResult = append(trs.ResourcesResult, pipelineResourceResults...)
@@ -208,10 +208,16 @@ func setTaskRunStatusBasedOnStepStatus(ctx context.Context, logger *zap.SugaredL
 					merr = multierror.Append(merr, err)
 				}
 
-				taskResults, pipelineResourceResults, filteredResults := filterResultsAndResources(results, specResults)
+				outputArtifacts, taskResults, pipelineResourceResults, filteredResults := filterResultsAndResources(results, specResults)
 				if tr.IsSuccessful() {
 					trs.TaskRunResults = append(trs.TaskRunResults, taskResults...)
 					trs.ResourcesResult = append(trs.ResourcesResult, pipelineResourceResults...)
+					if trs.Artifacts == nil {
+						trs.Artifacts = &v1beta1.Artifacts{
+							Outputs: []v1beta1.Artifact{},
+						}
+					}
+					trs.Artifacts.Outputs = append(trs.Artifacts.Outputs, outputArtifacts...)
 				}
 				msg, err = createMessageFromResults(filteredResults)
 				if err != nil {
@@ -261,8 +267,9 @@ func createMessageFromResults(results []v1beta1.PipelineResourceResult) (string,
 	return string(bytes), nil
 }
 
-func filterResultsAndResources(results []v1beta1.PipelineResourceResult, specResults []v1beta1.TaskResult) ([]v1beta1.TaskRunResult, []v1beta1.PipelineResourceResult, []v1beta1.PipelineResourceResult) {
+func filterResultsAndResources(results []v1beta1.PipelineResourceResult, specResults []v1beta1.TaskResult) ([]v1beta1.Artifact, []v1beta1.TaskRunResult, []v1beta1.PipelineResourceResult, []v1beta1.PipelineResourceResult) {
 	var taskResults []v1beta1.TaskRunResult
+	var artifacts []v1beta1.Artifact
 	var pipelineResourceResults []v1beta1.PipelineResourceResult
 	var filteredResults []v1beta1.PipelineResourceResult
 	neededTypes := make(map[string]v1beta1.ResultsType)
@@ -271,6 +278,19 @@ func filterResultsAndResources(results []v1beta1.PipelineResourceResult, specRes
 	}
 	for _, r := range results {
 		switch r.ResultType {
+		case v1beta1.ArtifactType:
+			var artifact v1beta1.Artifact
+			v := v1beta1.ResultValue{}
+			err := v.UnmarshalJSON([]byte(r.Value))
+			if err != nil {
+				continue
+			}
+			artifact = v1beta1.Artifact{
+				Name:  r.Key,
+				Value: v,
+			}
+			artifacts = append(artifacts, artifact)
+
 		case v1beta1.TaskRunResultType:
 			var taskRunResult v1beta1.TaskRunResult
 			if neededTypes[r.Key] == v1beta1.ResultsTypeString {
@@ -302,7 +322,7 @@ func filterResultsAndResources(results []v1beta1.PipelineResourceResult, specRes
 		}
 	}
 
-	return taskResults, pipelineResourceResults, filteredResults
+	return artifacts, taskResults, pipelineResourceResults, filteredResults
 }
 
 func removeDuplicateResults(taskRunResult []v1beta1.TaskRunResult) []v1beta1.TaskRunResult {

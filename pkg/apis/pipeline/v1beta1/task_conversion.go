@@ -72,6 +72,12 @@ func (ts *TaskSpec) ConvertTo(ctx context.Context, sink *v1.TaskSpec) error {
 		r.convertTo(ctx, &new)
 		sink.Results = append(sink.Results, new)
 	}
+
+	if ts.Artifacts != nil {
+		sink.Artifacts = &v1.Artifacts{}
+		ts.Artifacts.convertTo(ctx, sink.Artifacts)
+	}
+
 	sink.Params = nil
 	for _, p := range ts.Params {
 		new := v1.ParamSpec{}
@@ -128,6 +134,13 @@ func (ts *TaskSpec) ConvertFrom(ctx context.Context, source *v1.TaskSpec) error 
 		new.convertFrom(ctx, r)
 		ts.Results = append(ts.Results, new)
 	}
+
+	if source.Artifacts != nil {
+		newArtifacts := Artifacts{}
+		newArtifacts.convertFrom(ctx, source.Artifacts)
+		ts.Artifacts = &newArtifacts
+	}
+
 	ts.Params = nil
 	for _, p := range source.Params {
 		new := ParamSpec{}

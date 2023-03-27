@@ -1,0 +1,67 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: golang-test
+spec:
+  artifacts:
+    inputs:
+      - name: source
+        description: The source code used to create the image.
+        value: ""
+    outputs:
+      - name: coverage
+        description: Coverage report that was just built.
+        value: ""
+  steps:
+    - name: run-go-test
+      image: docker.io/library/golang:latest 
+      script: |
+        #!/usr/bin/env sh
+        cd $(artifacts.inputs.source.location)/demos
+        echo "this is coverage" >> coverage.html
+        cp -R coverage.html "$(artifacts.outputs.coverage.location)/"        
+        
+        #if [ ! -e $GOPATH/src/github.com/tektoncd/pipeline/go.mod ];then
+        # SRC_PATH="$GOPATH/src/github.com/tektoncd/pipeline"
+        # mkdir -p $SRC_PATH
+        # cp -R "$(artifacts.inputs.source.location)/pipeline"/* $SRC_PATH
+        # cd $SRC_PATH
+        #fi
+        #echo "running tests"
+        #ls
+        #pwd
+        #go test -coverprofile=coverage.out ./...
+        #go tool cover -html=coverage.out -o coverage.html
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: kaniko
+spec:
+  params:
+    - name: DOCKERFILE
+  artifacts:
+    inputs:
+      - name: source
+        description: The source code used to create the image.
+        value: ""
+    outputs:
+      - name: image
+        description: Image that was just built.
+        value: ""
+  steps:
+    - name: build-and-push
+      workingDir: $(artifacts.inputs.source.location)
+      image: gcr.io/kaniko-project/executor:v1.5.1@sha256:c6166717f7fe0b7da44908c986137ecfeab21f31ec3992f6e128fff8a94be8a5
+      args:
+        - --dockerfile=$(params.DOCKERFILE)
+        - --destination=$(artifacts.outputs.image.uri)
+        - --context=$(artifacts.inputs.source.location)/demos
+        - --digest-file=sha.txt
+    - name: write-image-result
+      workingDir: $(artifacts.inputs.source.location)
+      image: docker.io/library/bash:5.1.4
+      script: |
+        #!/usr/bin/env sh
+        SHA=`cat sha.txt`
+        echo -n "{\"uri\":\"$(artifacts.outputs.image.uri)\",\"digest\":\"${SHA}\"}" | tee $(artifacts.outputs.image.path)

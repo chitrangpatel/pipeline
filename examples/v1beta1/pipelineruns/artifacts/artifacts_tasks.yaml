@@ -1,0 +1,54 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: git-clone
+spec:
+  artifacts:
+    inputs:
+      - name: source
+        description: The precise source code that was fetched by this Task.
+        value: ""
+  steps:
+    - name: clone
+      image: gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init:v0.40.2
+      script: |
+        #!/usr/bin/env sh
+        git clone $(artifacts.inputs.source.uri) $(artifacts.inputs.source.location)/demos
+        cd $(artifacts.inputs.source.location)/demos
+        git checkout $(artifacts.inputs.source.digest)
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: gcs-upload
+spec:
+  artifacts:
+    outputs:
+      - name: blob 
+        description: The blob that this task is uploading to GCS.
+        value: ""
+  steps:
+    - name: upload
+      image: "gcr.io/google.com/cloudsdktool/cloud-sdk:379.0.0-slim"
+      script: |
+        #!/usr/bin/env sh
+        SHA=$(gsutil hash -h $(artifacts.outputs.blob.location)/coverage.html | head -4 | tail -1 | cut -f4)
+        gsutil cp $(artifacts.outputs.blob.location)/coverage.html $(artifacts.outputs.blob.uri)
+        echo -n "{\"uri\":\"$(artifacts.outputs.blob.uri)\",\"digest\":\"$SHA\"}" | tee $(artifacts.outputs.blob.path)
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: fake-upload
+spec:
+  artifacts:
+    outputs:
+      - name: coverage
+        description: The coverage that this task is uploading to GCS.
+        value: ""
+  steps:
+    - name: fake-upload
+      image: alpine 
+      script: |
+        #!/usr/bin/env sh
+        echo -n "{\"uri\":\"$(artifacts.outputs.coverage.uri)\",\"digest\":\"12345678\"}" | tee $(artifacts.outputs.coverage.path)

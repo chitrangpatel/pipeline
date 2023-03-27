@@ -70,6 +70,12 @@ func (ps *PipelineSpec) ConvertTo(ctx context.Context, sink *v1.PipelineSpec) er
 		r.convertTo(ctx, &new)
 		sink.Results = append(sink.Results, new)
 	}
+
+	if ps.Artifacts != nil {
+		sink.Artifacts = &v1.Artifacts{}
+		ps.Artifacts.convertTo(ctx, sink.Artifacts)
+	}
+
 	sink.Finally = nil
 	for _, f := range ps.Finally {
 		new := v1.PipelineTask{}
@@ -123,6 +129,12 @@ func (ps *PipelineSpec) ConvertFrom(ctx context.Context, source *v1.PipelineSpec
 		new.convertFrom(ctx, r)
 		ps.Results = append(ps.Results, new)
 	}
+	if source.Artifacts != nil {
+		newArtifacts := Artifacts{}
+		newArtifacts.convertFrom(ctx, source.Artifacts)
+		ps.Artifacts = &newArtifacts
+	}
+
 	ps.Finally = nil
 	for _, f := range source.Finally {
 		new := PipelineTask{}
@@ -162,6 +174,12 @@ func (pt PipelineTask) convertTo(ctx context.Context, sink *v1.PipelineTask) err
 		p.convertTo(ctx, &new)
 		sink.Params = append(sink.Params, new)
 	}
+
+	if pt.Artifacts != nil {
+		sink.Artifacts = &v1.Artifacts{}
+		pt.Artifacts.convertTo(ctx, sink.Artifacts)
+	}
+
 	sink.Matrix = nil
 	if pt.IsMatrixed() {
 		new := v1.Matrix{}
@@ -208,6 +226,13 @@ func (pt *PipelineTask) convertFrom(ctx context.Context, source v1.PipelineTask)
 		new.convertFrom(ctx, p)
 		pt.Params = append(pt.Params, new)
 	}
+
+	if source.Artifacts != nil {
+		newArtifacts := Artifacts{}
+		newArtifacts.convertFrom(ctx, source.Artifacts)
+		pt.Artifacts = &newArtifacts
+	}
+
 	pt.Matrix = nil
 	if source.IsMatrixed() {
 		new := Matrix{}

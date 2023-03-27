@@ -31,10 +31,12 @@ import (
 
 const (
 	// resultsParseNumber is the value of how many parts we split from result reference. e.g.  tasks.<taskName>.results.<objectResultName>
-	resultsParseNumber = 4
+	resultsParseNumber   = 4
+	artifactsParseNumber = 5
 	// objectElementResultsParseNumber is the value of how many parts we split from
 	// object attribute result reference. e.g.  tasks.<taskName>.results.<objectResultName>.<individualAttribute>
-	objectElementResultsParseNumber = 5
+	objectElementResultsParseNumber   = 5
+	objectElementArtifactsParseNumber = 6
 	// objectIndividualVariablePattern is the reference pattern for object individual keys params.<object_param_name>.<key_name>
 	objectIndividualVariablePattern = "params.%s.%s"
 )
@@ -46,6 +48,66 @@ var (
 		"params['%s']",
 	}
 )
+
+// ApplyParameters applies the params from a PipelineRun.Params to a PipelineSpec.
+func ApplyArtifactTaskRef(ctx context.Context, p *v1beta1.PipelineSpec, pr *v1beta1.PipelineRun) *v1beta1.PipelineSpec {
+	p = p.DeepCopy()
+	if pr.Spec.Artifacts != nil {
+		if p.Artifacts.Inputs != nil && pr.Spec.Artifacts.Inputs != nil {
+			for idx, pai := range p.Artifacts.Inputs {
+				for _, prai := range pr.Spec.Artifacts.Inputs {
+					if prai.Name == pai.Name && prai.TaskRef != nil {
+						p.Artifacts.Inputs[idx].TaskRef = prai.TaskRef
+					}
+				}
+			}
+		}
+		if p.Artifacts.Outputs != nil && pr.Spec.Artifacts.Outputs != nil {
+			for idx, pai := range p.Artifacts.Outputs {
+				for _, prai := range pr.Spec.Artifacts.Outputs {
+					if prai.Name == pai.Name && prai.TaskRef != nil {
+						p.Artifacts.Outputs[idx].TaskRef = prai.TaskRef
+					}
+				}
+			}
+		}
+	}
+	for _, pt := range p.Tasks {
+		if pt.Artifacts != nil {
+			if pt.Artifacts.Inputs != nil && pr.Spec.Artifacts.Inputs != nil {
+				for idx, ptai := range pt.Artifacts.Inputs {
+					for _, pai := range p.Artifacts.Inputs {
+						if ptai.Name == pai.Name {
+							pt.Artifacts.Inputs[idx].TaskRef = pai.TaskRef
+						}
+					}
+					for _, prai := range pr.Spec.Artifacts.Inputs {
+						if prai.Name == ptai.Name {
+							pt.Artifacts.Inputs[idx].Value = prai.Value
+							pt.Artifacts.Inputs[idx].Type = prai.Type
+						}
+					}
+				}
+			}
+			if pt.Artifacts.Outputs != nil && pr.Spec.Artifacts.Outputs != nil {
+				for idx, ptai := range pt.Artifacts.Outputs {
+					for _, pai := range p.Artifacts.Outputs {
+						if ptai.Name == pai.Name {
+							pt.Artifacts.Outputs[idx].TaskRef = pai.TaskRef
+						}
+					}
+					for _, prai := range pr.Spec.Artifacts.Outputs {
+						if prai.Name == ptai.Name {
+							pt.Artifacts.Outputs[idx].Value = prai.Value
+							pt.Artifacts.Outputs[idx].Type = prai.Type
+						}
+					}
+				}
+			}
+		}
+	}
+	return p
+}
 
 // ApplyParameters applies the params from a PipelineRun.Params to a PipelineSpec.
 func ApplyParameters(ctx context.Context, p *v1beta1.PipelineSpec, pr *v1beta1.PipelineRun) *v1beta1.PipelineSpec {
@@ -170,8 +232,40 @@ func ApplyPipelineTaskContexts(pt *v1beta1.PipelineTask) *v1beta1.PipelineTask {
 	return pt
 }
 
+// ApplyTaskArtifacts applies the ResolvedArtifactRef to each PipelineTask.Artifacts.Inputs and PipelineRask.Params  and Pipeline.WhenExpressions in targets
+func ApplyTaskArtifacts(targets PipelineRunState, resolvedArtifactRefs ResolvedArtifactRefs) {
+	stringReplacements := resolvedArtifactRefs.getStringReplacements()
+	arrayReplacements := resolvedArtifactRefs.getArrayReplacements()
+	objectReplacements := resolvedArtifactRefs.getObjectReplacements()
+	for _, resolvedPipelineRunTask := range targets {
+		if resolvedPipelineRunTask.PipelineTask != nil {
+			pipelineTask := resolvedPipelineRunTask.PipelineTask.DeepCopy()
+			pipelineTask.Params = replaceParamValues(pipelineTask.Params, stringReplacements, arrayReplacements, objectReplacements)
+			if pipelineTask.IsMatrixed() {
+				// Only string replacements from string, array or object results are supported
+				// We plan to support array replacements from array results soon (#5925)
+				pipelineTask.Matrix.Params = replaceParamValues(pipelineTask.Matrix.Params, stringReplacements, nil, nil)
+				for i := range pipelineTask.Matrix.Include {
+					// matrix include parameters can only be type string
+					pipelineTask.Matrix.Include[i].Params = replaceParamValues(pipelineTask.Matrix.Include[i].Params, stringReplacements, nil, nil)
+				}
+			}
+			pipelineTask.WhenExpressions = pipelineTask.WhenExpressions.ReplaceWhenExpressionsVariables(stringReplacements, arrayReplacements)
+			if pipelineTask.TaskRef != nil && pipelineTask.TaskRef.Params != nil {
+				pipelineTask.TaskRef.Params = replaceParamValues(pipelineTask.TaskRef.Params, stringReplacements, arrayReplacements, objectReplacements)
+			}
+			resolvedPipelineRunTask.PipelineTask = pipelineTask
+			if pipelineTask.Artifacts != nil && pipelineTask.Artifacts.Inputs != nil {
+				pipelineTask.Artifacts.Inputs = replaceArtifactValues(pipelineTask.Artifacts.Inputs, stringReplacements, arrayReplacements, objectReplacements)
+			}
+		}
+	}
+}
+
 // ApplyTaskResults applies the ResolvedResultRef to each PipelineTask.Params and Pipeline.WhenExpressions in targets
 func ApplyTaskResults(targets PipelineRunState, resolvedResultRefs ResolvedResultRefs) {
+	if len(resolvedResultRefs) > 0 {
+	}
 	stringReplacements := resolvedResultRefs.getStringReplacements()
 	arrayReplacements := resolvedResultRefs.getArrayReplacements()
 	objectReplacements := resolvedResultRefs.getObjectReplacements()
@@ -324,6 +418,111 @@ func replaceParamValues(params []v1beta1.Param, stringReplacements map[string]st
 	return params
 }
 
+func replaceArtifactValues(artifacts []v1beta1.Artifact, stringReplacements map[string]string, arrayReplacements map[string][]string, objectReplacements map[string]map[string]string) []v1beta1.Artifact {
+	for i := range artifacts {
+		artifacts[i].Value.ApplyReplacements(stringReplacements, arrayReplacements, objectReplacements)
+	}
+	return artifacts
+}
+
+// ApplyTaskArtifactsToPipelineArtifacts applies the results of completed TasksRuns and Runs to a Pipeline's
+// list of PipelineResults, returning the computed set of PipelineRunResults. References to
+// non-existent TaskResults or failed TaskRuns or Runs result in a PipelineResult being considered invalid
+// and omitted from the returned slice. A nil slice is returned if no results are passed in or all
+// results are invalid.
+func ApplyTaskArtifactsToPipelineArtifacts(
+	ctx context.Context,
+	artifacts []v1beta1.Artifact,
+	taskRunArtifacts map[string][]v1beta1.Artifact,
+	skippedTasks []v1beta1.SkippedTask) ([]v1beta1.Artifact, error) {
+
+	var invalidPipelineArtifacts []string
+	skippedTaskNames := map[string]bool{}
+	for _, t := range skippedTasks {
+		skippedTaskNames[t.Name] = true
+	}
+	var runArtifacts []v1beta1.Artifact
+
+	stringReplacements := map[string]string{}
+	objectReplacements := map[string]map[string]string{}
+	for _, artifact := range artifacts {
+		variablesInPipelineArtifact, _ := v1beta1.GetVarSubstitutionExpressionsForPipelineArtifact(artifact)
+		if len(variablesInPipelineArtifact) == 0 {
+			continue
+		}
+		validPipelineArtifact := true
+		for _, variable := range variablesInPipelineArtifact {
+			if _, isMemoized := stringReplacements[variable]; isMemoized {
+				continue
+			}
+			if _, isMemoized := objectReplacements[variable]; isMemoized {
+				continue
+			}
+			variableParts := strings.Split(variable, ".")
+			// if the referenced task is skipped, we should also skip the results replacements
+			if _, ok := skippedTaskNames[variableParts[1]]; ok {
+				validPipelineArtifact = false
+				continue
+			}
+			if (variableParts[0] != v1beta1.ArtifactTaskPart && variableParts[0] != v1beta1.ArtifactFinallyPart) || variableParts[2] != v1beta1.ArtifactArtifactPart {
+				invalidPipelineArtifacts = append(invalidPipelineArtifacts, artifact.Name)
+				validPipelineArtifact = false
+				continue
+			}
+			switch len(variableParts) {
+			case artifactsParseNumber:
+				// tasks.build-and-push-image.artifact.outputs.image
+				taskName, artifactName := variableParts[1], variableParts[4]
+				artifactName, _ = v1beta1.ParseArtifactName(artifactName)
+				if artifactValue := taskArtifactValue(taskName, artifactName, taskRunArtifacts); artifactValue != nil {
+					switch artifactValue.Type {
+					case v1beta1.ParamTypeString:
+						stringReplacements[variable] = artifactValue.StringVal
+					case v1beta1.ParamTypeObject:
+						objectReplacements[substitution.StripStarVarSubExpression(variable)] = artifactValue.ObjectVal
+					}
+				} else {
+					// referred result name is not existent
+					invalidPipelineArtifacts = append(invalidPipelineArtifacts, artifact.Name)
+					validPipelineArtifact = false
+				}
+			case objectElementArtifactsParseNumber:
+				taskName, artifactName, objectKey := variableParts[1], variableParts[4], variableParts[5]
+				artifactName, _ = v1beta1.ParseArtifactName(artifactName)
+				if artifactValue := taskArtifactValue(taskName, artifactName, taskRunArtifacts); artifactValue != nil {
+					if _, ok := artifactValue.ObjectVal[objectKey]; ok {
+						stringReplacements[variable] = artifactValue.ObjectVal[objectKey]
+					} else {
+						// referred object key is not existent
+						invalidPipelineArtifacts = append(invalidPipelineArtifacts, artifact.Name)
+					}
+				} else {
+					// referred result name is not existent
+					invalidPipelineArtifacts = append(invalidPipelineArtifacts, artifact.Name)
+					validPipelineArtifact = false
+				}
+			default:
+				invalidPipelineArtifacts = append(invalidPipelineArtifacts, artifact.Name)
+				validPipelineArtifact = false
+			}
+		}
+		if validPipelineArtifact {
+			finalValue := artifact.Value
+			finalValue.ApplyReplacements(stringReplacements, map[string][]string{}, objectReplacements)
+			runArtifacts = append(runArtifacts, v1beta1.Artifact{
+				Name:  artifact.Name,
+				Value: finalValue,
+			})
+		}
+	}
+
+	if len(invalidPipelineArtifacts) > 0 {
+		return runArtifacts, fmt.Errorf("invalid pipelineartifacts %v, the referred artifacts don't exist", invalidPipelineArtifacts)
+	}
+
+	return runArtifacts, nil
+}
+
 // ApplyTaskResultsToPipelineResults applies the results of completed TasksRuns and Runs to a Pipeline's
 // list of PipelineResults, returning the computed set of PipelineRunResults. References to
 // non-existent TaskResults or failed TaskRuns or Runs result in a PipelineResult being considered invalid
@@ -443,6 +642,15 @@ func ApplyTaskResultsToPipelineResults(
 	}
 
 	return runResults, nil
+}
+
+func taskArtifactValue(taskName string, artifactName string, taskArtifacts map[string][]v1beta1.Artifact) *v1beta1.ParamValue {
+	for _, trArtifact := range taskArtifacts[taskName] {
+		if trArtifact.Name == artifactName {
+			return &trArtifact.Value
+		}
+	}
+	return nil
 }
 
 // taskResultValue returns the result value for a given pipeline task name and result name in a map of TaskRunResults for

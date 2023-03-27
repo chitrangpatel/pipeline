@@ -37,7 +37,8 @@ type TaskRunSpec struct {
 	Debug *TaskRunDebug `json:"debug,omitempty"`
 	// +optional
 	// +listType=atomic
-	Params []Param `json:"params,omitempty"`
+	Artifacts *Artifacts `json:"artifacts,omitempty"`
+	Params    []Param    `json:"params,omitempty"`
 	// +optional
 	ServiceAccountName string `json:"serviceAccountName"`
 	// no more than one of the TaskRef and TaskSpec may be specified.
@@ -227,6 +228,8 @@ type TaskRunStatusFields struct {
 	// +optional
 	// +listType=atomic
 	Results []TaskRunResult `json:"results,omitempty"`
+
+	Artifacts *Artifacts `json:"artifacts,omitempty"`
 
 	// The list has one entry per sidecar in the manifest. Each entry is
 	// represents the imageid of the corresponding sidecar.

@@ -151,6 +151,100 @@
         }
       }
     },
+    "v1beta1.Artifact": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "description": {
+          "description": "Description is a human-readable description of the result",
+          "type": "string"
+        },
+        "name": {
+          "description": "Name the given name",
+          "type": "string",
+          "default": ""
+        },
+        "taskRef": {
+          "$ref": "#/definitions/v1beta1.TaskRef"
+        },
+        "type": {
+          "type": "string"
+        },
+        "value": {
+          "description": "Value the given value of the result",
+          "default": {},
+          "$ref": "#/definitions/v1beta1.ParamValue"
+        }
+      }
+    },
+    "v1beta1.ArtifactRef": {
+      "description": "ArtifactRef is a type that represents a reference to a task run artifact",
+      "type": "object",
+      "required": [
+        "pipelineTask",
+        "artifact",
+        "artifactsIndex",
+        "property"
+      ],
+      "properties": {
+        "artifact": {
+          "type": "string",
+          "default": ""
+        },
+        "artifactsIndex": {
+          "type": "integer",
+          "format": "int32",
+          "default": 0
+        },
+        "pipelineTask": {
+          "type": "string",
+          "default": ""
+        },
+        "property": {
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "v1beta1.ArtifactiValue": {
+      "type": "object",
+      "required": [
+        "uri",
+        "digest"
+      ],
+      "properties": {
+        "digest": {
+          "type": "string",
+          "default": ""
+        },
+        "uri": {
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "v1beta1.Artifacts": {
+      "description": "TaskResult used to describe the results of a task",
+      "type": "object",
+      "properties": {
+        "inputs": {
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1beta1.Artifact"
+          }
+        },
+        "outputs": {
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1beta1.Artifact"
+          }
+        }
+      }
+    },
     "v1beta1.ChildStatusReference": {
       "description": "ChildStatusReference is used to point to the statuses of individual TaskRuns and Runs within this PipelineRun.",
       "type": "object",
@@ -428,6 +522,11 @@
       "properties": {
         "apiVersion": {
           "type": "string"
+        },
+        "artifacts": {
+          "description": "Artifacts that this Task can take as input/output",
+          "x-kubernetes-list-type": "atomic",
+          "$ref": "#/definitions/v1beta1.Artifacts"
         },
         "description": {
           "description": "Description is a user-facing description of the task that may be used to populate a UI.",
@@ -858,6 +957,9 @@
       "description": "PipelineRunSpec defines the desired state of PipelineRun",
       "type": "object",
       "properties": {
+        "artifacts": {
+          "$ref": "#/definitions/v1beta1.Artifacts"
+        },
         "params": {
           "description": "Params is a list of parameter names and values.",
           "type": "array",
@@ -923,6 +1025,9 @@
             "type": "string",
             "default": ""
           }
+        },
+        "artifacts": {
+          "$ref": "#/definitions/v1beta1.Artifacts"
         },
         "childReferences": {
           "description": "list of TaskRun and Run names, PipelineTask names, and API versions/kinds for children of this PipelineRun.",
@@ -1014,6 +1119,9 @@
       "description": "PipelineRunStatusFields holds the fields of PipelineRunStatus' status. This is defined separately and inlined so that other types can readily consume these fields via duck typing.",
       "type": "object",
       "properties": {
+        "artifacts": {
+          "$ref": "#/definitions/v1beta1.Artifacts"
+        },
         "childReferences": {
           "description": "list of TaskRun and Run names, PipelineTask names, and API versions/kinds for children of this PipelineRun.",
           "type": "array",
@@ -1112,6 +1220,11 @@
       "description": "PipelineSpec defines the desired state of Pipeline.",
       "type": "object",
       "properties": {
+        "artifacts": {
+          "description": "Artifacts that this Task can take as input/output",
+          "x-kubernetes-list-type": "atomic",
+          "$ref": "#/definitions/v1beta1.Artifacts"
+        },
         "description": {
           "description": "Description is a user-facing description of the pipeline that may be used to populate a UI.",
           "type": "string"
@@ -1167,6 +1280,11 @@
       "description": "PipelineTask defines a task in a Pipeline, passing inputs from both Params and from the output of previous tasks.",
       "type": "object",
       "properties": {
+        "artifacts": {
+          "description": "Artifacts that this Task can take as input/output",
+          "x-kubernetes-list-type": "atomic",
+          "$ref": "#/definitions/v1beta1.Artifacts"
+        },
         "matrix": {
           "description": "Matrix declares parameters used to fan out this task.",
           "$ref": "#/definitions/v1beta1.Matrix"
@@ -2331,6 +2449,10 @@
       "description": "TaskRunSpec defines the desired state of TaskRun",
       "type": "object",
       "properties": {
+        "artifacts": {
+          "x-kubernetes-list-type": "atomic",
+          "$ref": "#/definitions/v1beta1.Artifacts"
+        },
         "computeResources": {
           "description": "Compute resources to use for this TaskRun",
           "$ref": "#/definitions/v1.ResourceRequirements"
@@ -2343,8 +2465,7 @@
           "items": {
             "default": {},
             "$ref": "#/definitions/v1beta1.Param"
-          },
-          "x-kubernetes-list-type": "atomic"
+          }
         },
         "podTemplate": {
           "description": "PodTemplate holds pod specific configuration",
@@ -2421,6 +2542,11 @@
             "type": "string",
             "default": ""
           }
+        },
+        "artifacts": {
+          "description": "Artifacts are the list of results written out by the task's containers",
+          "x-kubernetes-list-type": "atomic",
+          "$ref": "#/definitions/v1beta1.Artifacts"
         },
         "cloudEvents": {
           "description": "CloudEvents describe the state of each cloud event requested via a CloudEventResource.\n\nDeprecated: Removed in v0.44.0.",
@@ -2529,6 +2655,11 @@
         "podName"
       ],
       "properties": {
+        "artifacts": {
+          "description": "Artifacts are the list of results written out by the task's containers",
+          "x-kubernetes-list-type": "atomic",
+          "$ref": "#/definitions/v1beta1.Artifacts"
+        },
         "cloudEvents": {
           "description": "CloudEvents describe the state of each cloud event requested via a CloudEventResource.\n\nDeprecated: Removed in v0.44.0.",
           "type": "array",
@@ -2638,6 +2769,11 @@
       "description": "TaskSpec defines the desired state of Task.",
       "type": "object",
       "properties": {
+        "artifacts": {
+          "description": "Artifacts that this Task can take as input/output",
+          "x-kubernetes-list-type": "atomic",
+          "$ref": "#/definitions/v1beta1.Artifacts"
+        },
         "description": {
           "description": "Description is a user-facing description of the task that may be used to populate a UI.",
           "type": "string"

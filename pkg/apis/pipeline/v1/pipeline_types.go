@@ -100,6 +100,9 @@ type PipelineSpec struct {
 	// +optional
 	// +listType=atomic
 	Results []PipelineResult `json:"results,omitempty"`
+	// Artifacts that this Task can take as input/output
+	// +listType=atomic
+	Artifacts *Artifacts `json:"artifacts,omitempty"`
 	// Finally declares the list of Tasks that execute just before leaving the Pipeline
 	// i.e. either after all Tasks are finished executing successfully
 	// or after a failure which would result in ending the Pipeline
@@ -185,6 +188,10 @@ type PipelineTask struct {
 	// +optional
 	// +listType=atomic
 	Params Params `json:"params,omitempty"`
+
+	// Artifacts that this Task can take as input/output
+	// +listType=atomic
+	Artifacts *Artifacts `json:"artifacts,omitempty"`
 
 	// Matrix declares parameters used to fan out this task.
 	// +optional

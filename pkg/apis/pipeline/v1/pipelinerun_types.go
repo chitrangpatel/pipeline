@@ -225,6 +225,7 @@ type PipelineRunSpec struct {
 	// +listType=atomic
 	Params []Param `json:"params,omitempty"`
 
+	Artifacts *Artifacts `json:"artifacts,omitempty"`
 	// Used for cancelling a pipelinerun (and maybe more later on)
 	// +optional
 	Status PipelineRunSpecStatus `json:"status,omitempty"`
@@ -407,6 +408,8 @@ type PipelineRunStatusFields struct {
 	// +optional
 	// +listType=atomic
 	Results []PipelineRunResult `json:"results,omitempty"`
+
+	Artifacts *Artifacts `json:"artifacts,omitempty"`
 
 	// PipelineRunSpec contains the exact spec used to instantiate the run
 	PipelineSpec *PipelineSpec `json:"pipelineSpec,omitempty"`

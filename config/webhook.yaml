@@ -101,6 +101,8 @@ spec:
           value: config-leader-election
         - name: CONFIG_FEATURE_FLAGS_NAME
           value: feature-flags
+        - name: ARTIFACT_CONFIG 
+          value: artifact-config
         # If you change WEBHOOK_PORT, you will also need to change the
         # containerPort "https-webhook" to the same value.
         - name: WEBHOOK_PORT

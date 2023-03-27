@@ -92,6 +92,9 @@ type TaskSpec struct {
 	// Results are values that this Task can output
 	// +listType=atomic
 	Results []TaskResult `json:"results,omitempty"`
+	// Artifacts that this Task can take as input/output
+	// +listType=atomic
+	Artifacts *Artifacts `json:"artifacts,omitempty"`
 }
 
 // TaskList contains a list of Task

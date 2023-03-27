@@ -1,0 +1,78 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: ci-pipeline
+spec:
+  params:
+    - name: DOCKERFILE
+  artifacts:
+    inputs:
+      - name: source
+        description: The precise source code used to build this image.
+        value: ""
+    outputs:
+      - name: coverage
+        description: Coverage report that was just built.
+        value: "$(tasks.golang-test-task.artifacts.outputs.coverage)"
+          #taskRef:
+          #name: fake-upload
+      - name: image
+        description: "Image pushed using kaniko"
+        value: "$(tasks.kaniko-task.artifacts.outputs.image)"
+  tasks:
+    - name: golang-test-task
+      artifacts:
+        inputs:
+          - name: source
+            value: $(artifacts.inputs.source)
+        outputs:
+          - name: coverage
+            value: $(artifacts.outputs.coverage)
+      taskRef:
+        name: golang-test
+    - name: kaniko-task
+      runafter:
+        - golang-test-task
+      params:
+        - name: DOCKERFILE
+          value: $(params.DOCKERFILE)
+      artifacts:
+        inputs:
+          - name: source
+            value: $(artifacts.inputs.source)
+        outputs:
+          - name: image
+            value: $(artifacts.outputs.image)
+      taskRef:
+        name: kaniko
+---
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: tasks-in-tasks-for-artifacts
+spec:
+  serviceaccountname: chitrangksa
+  params:
+    - name: DOCKERFILE
+      value: demos/cdf/src/Dockerfile
+  artifacts:
+    inputs:
+      - name: source
+        type: source-code
+        value:
+          uri: https://github.com/chuangw6/demos.git 
+          digest: e4ec298e535f7b9c6e91532ea61f9dc6a6710a16 
+            #taskRef:
+            #name: git-clone
+    outputs:
+      - name: coverage
+        type: coverage
+        value:
+          uri: gs://chitrang-prow/coverage.html
+            #taskRef:
+            #name: gcs-upload
+      - name: image
+        value:
+          uri: us-central1-docker.pkg.dev/chitrang-tekton/chitrang/ci 
+  PipelineRef:
+    name: ci-pipeline

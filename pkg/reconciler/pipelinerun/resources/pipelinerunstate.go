@@ -149,6 +149,19 @@ func (state PipelineRunState) AdjustStartTime(unadjustedStartTime *metav1.Time) 
 	return adjustedStartTime.DeepCopy()
 }
 
+func (state PipelineRunState) GetTaskRunsArtifacts() map[string][]v1beta1.Artifact {
+	artifacts := make(map[string][]v1beta1.Artifact)
+	for _, rpt := range state {
+		if !rpt.isSuccessful() {
+			continue
+		}
+		if rpt.TaskRun != nil && rpt.TaskRun.Status.Artifacts != nil {
+			artifacts[rpt.PipelineTask.Name] = rpt.TaskRun.Status.Artifacts.Outputs
+		}
+	}
+	return artifacts
+}
+
 // GetTaskRunsResults returns a map of all successfully completed TaskRuns in the state, with the pipeline task name as
 // the key and the results from the corresponding TaskRun as the value. It only includes tasks which have completed successfully.
 func (state PipelineRunState) GetTaskRunsResults() map[string][]v1beta1.TaskRunResult {
