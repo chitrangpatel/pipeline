@@ -20,18 +20,6 @@ spec:
         cd $(artifacts.inputs.source.location)/demos
         echo "this is coverage" >> coverage.html
         cp -R coverage.html "$(artifacts.outputs.coverage.location)/"        
-        
-        #if [ ! -e $GOPATH/src/github.com/tektoncd/pipeline/go.mod ];then
-        # SRC_PATH="$GOPATH/src/github.com/tektoncd/pipeline"
-        # mkdir -p $SRC_PATH
-        # cp -R "$(artifacts.inputs.source.location)/pipeline"/* $SRC_PATH
-        # cd $SRC_PATH
-        #fi
-        #echo "running tests"
-        #ls
-        #pwd
-        #go test -coverprofile=coverage.out ./...
-        #go tool cover -html=coverage.out -o coverage.html
 ---
 apiVersion: tekton.dev/v1beta1
 kind: Task

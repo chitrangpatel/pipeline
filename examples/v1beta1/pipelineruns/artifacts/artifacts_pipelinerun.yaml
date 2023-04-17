@@ -1,0 +1,30 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: tasks-in-tasks-for-artifacts-
+spec:
+  serviceaccountname: chitrangksa
+  params:
+    - name: DOCKERFILE
+      value: demos/cdf/src/Dockerfile
+  artifacts:
+    inputs:
+      - name: source
+        type: source-code
+        value:
+          uri: https://github.com/chuangw6/demos.git 
+          digest: e4ec298e535f7b9c6e91532ea61f9dc6a6710a16 
+        taskRef:
+          name: git-clone
+    outputs:
+      - name: coverage
+        type: coverage
+        value:
+          uri: gs://chitrang-prow/coverage.html
+        taskRef:
+          name: gcs-upload
+      - name: image
+        value:
+          uri: us-central1-docker.pkg.dev/chitrang-tekton/chitrang/ci 
+  PipelineRef:
+    name: ci-pipeline

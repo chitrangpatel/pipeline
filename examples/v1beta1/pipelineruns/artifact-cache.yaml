@@ -1,0 +1,119 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: artifact-cache-
+spec:
+  workspaces:
+    - name: artifact-cache
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 16Mi
+          volumeMode: Filesystem
+    - name: artifact1
+      emptyDir: {}
+    - name: artifact2
+      emptyDir: {}
+    - name: artifact3
+      emptyDir: {}
+    - name: artifact4
+      emptyDir: {}
+  pipelineSpec:
+    results:
+      - name: artifact1
+        value: $(tasks.check-artifact1.results.artifact)
+      - name: artifact1-updated
+        value: $(tasks.check-artifact2.results.artifact)
+    tasks:
+    - name: fetch-source-code
+      taskSpec:
+        steps:
+        - name: fetch-source-code
+          image: gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init:v0.40.2
+          script: |
+            cd $(workspaces.artifact1.path)
+            git clone https://github.com/chuangw6/demos.git
+        - name: do-some-work
+          image: ubuntu
+          script: |
+            cd $(workspaces.artifact1.path)/demos
+            echo "this is artifact1" > foo.txt
+            chmod 777 $(workspaces.artifact-cache.path)
+        - name: cache-source-code
+          image: gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init:v0.40.2
+          script: |
+            cd $(workspaces.artifact1.path)
+            cp -r demos $(workspaces.artifact-cache.path)
+            cd $(workspaces.artifact-cache.path)/demos
+            git config --global user.email "tekton.dev"
+            git config --global user.name "tekton-pipelines"
+            git checkout -b fetch-source-code
+            git add .
+            git commit -m "cache after task fetch-source-code"
+    - name: run-tests
+      runAfter:
+        - fetch-source-code
+      taskSpec:
+        steps:
+        - name: load-artifact-from-cache 
+          image: gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init:v0.40.2
+          script: |
+            cd $(workspaces.artifact-cache.path)/demos
+            git checkout fetch-source-code
+            cd ..
+            cp -r demos $(workspaces.artifact2.path)/demos
+        - name: update-artifact
+          image: ubuntu
+          script: |
+            cd $(workspaces.artifact2.path)/demos
+            echo "this is updated artifact1" > foo.txt
+        - name: update-source-code
+          image: gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init:v0.40.2
+          script: |
+            cd $(workspaces.artifact2.path)
+            cp -r demos $(workspaces.artifact-cache.path)
+            cd $(workspaces.artifact-cache.path)/demos
+            git config --global user.email "tekton.dev"
+            git config --global user.name "tekton-pipelines"
+            git checkout -b run-tests
+            git add .
+            git commit -m "cache after task run-tests"
+    - name: check-artifact1
+      runAfter:
+        - run-tests
+      taskSpec:
+        results:
+          - name: artifact
+        steps:
+        - name: load-artifact1-from-cache 
+          image: gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init:v0.40.2
+          script: |
+            cd $(workspaces.artifact-cache.path)/demos
+            git checkout fetch-source-code
+            cd ..
+            cp -r demos $(workspaces.artifact3.path)/demos
+        - name: print-artifact1
+          image: ubuntu
+          script: |
+            cat $(workspaces.artifact3.path)/demos/foo.txt | tee $(results.artifact.path)
+    - name: check-artifact2
+      runAfter:
+        - check-artifact1
+      taskSpec:
+        results:
+          - name: artifact
+        steps:
+        - name: load-artifact2-from-cache 
+          image: gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init:v0.40.2
+          script: |
+            cd $(workspaces.artifact-cache.path)/demos
+            git checkout run-tests
+            cd ..
+            cp -r demos $(workspaces.artifact4.path)/demos
+        - name: print-artifact2
+          image: ubuntu
+          script: |
+            cat $(workspaces.artifact4.path)/demos/foo.txt | tee $(results.artifact.path)
