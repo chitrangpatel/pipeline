@@ -20,6 +20,7 @@ package scheme
 
 import (
 	tektonv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
+	tektonsteps "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1/steps"
 	tektonv1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,6 +37,7 @@ var localSchemeBuilder = runtime.SchemeBuilder{
 	tektonv1alpha1.AddToScheme,
 	tektonv1beta1.AddToScheme,
 	tektonv1.AddToScheme,
+	tektonsteps.AddToScheme,
 }
 
 // AddToScheme adds all types of this clientset into the given scheme. This allows composition

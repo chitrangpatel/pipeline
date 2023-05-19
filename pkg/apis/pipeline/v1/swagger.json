@@ -286,6 +286,17 @@
         }
       }
     },
+    "v1.Mapping": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
     "v1.Matrix": {
       "description": "Matrix is used to fan out Tasks in a Pipeline",
       "type": "object",
@@ -1433,6 +1444,20 @@
           "description": "OnError defines the exiting behavior of a container on error can be set to [ continue | stopAndFail ]",
           "type": "string"
         },
+        "params": {
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.Mapping"
+          }
+        },
+        "results": {
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.Mapping"
+          }
+        },
         "script": {
           "description": "Script is the contents of an executable file to execute.\n\nIf Script is not empty, the Step cannot have an Command and the Args will be passed to the Script.",
           "type": "string"
@@ -1448,6 +1473,10 @@
         "stdoutConfig": {
           "description": "Stores configuration for the stdout stream of the step.",
           "$ref": "#/definitions/v1.StepOutputConfig"
+        },
+        "stepRef": {
+          "description": "Contains the reference to an existing step",
+          "$ref": "#/definitions/v1.StepRef"
         },
         "timeout": {
           "description": "Timeout is the time after which the step times out. Defaults to never. Refer to Go's ParseDuration documentation for expected format: https://golang.org/pkg/time/#ParseDuration",
@@ -1496,6 +1525,15 @@
       "properties": {
         "path": {
           "description": "Path to duplicate stdout stream to on container's local filesystem.",
+          "type": "string"
+        }
+      }
+    },
+    "v1.StepRef": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Name of the referenced step",
           "type": "string"
         }
       }

@@ -26,6 +26,7 @@ import (
 	versioned "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	internalinterfaces "github.com/tektoncd/pipeline/pkg/client/informers/externalversions/internalinterfaces"
 	pipeline "github.com/tektoncd/pipeline/pkg/client/informers/externalversions/pipeline"
+	externalversionsv1 "github.com/tektoncd/pipeline/pkg/client/informers/externalversions/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -244,8 +245,13 @@ type SharedInformerFactory interface {
 	InformerFor(obj runtime.Object, newFunc internalinterfaces.NewInformerFunc) cache.SharedIndexInformer
 
 	Tekton() pipeline.Interface
+	Tekton() externalversionsv1.Interface
 }
 
 func (f *sharedInformerFactory) Tekton() pipeline.Interface {
 	return pipeline.New(f, f.namespace, f.tweakListOptions)
+}
+
+func (f *sharedInformerFactory) Tekton() externalversionsv1.Interface {
+	return externalversionsv1.New(f, f.namespace, f.tweakListOptions)
 }

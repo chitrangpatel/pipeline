@@ -29,6 +29,8 @@ const (
 	// TaskControllerName holds the name of the Task controller
 	TaskControllerName = "Task"
 
+	StepControllerName = "Step"
+
 	// ClusterTaskControllerName holds the name of the Task controller
 	ClusterTaskControllerName = "ClusterTask"
 

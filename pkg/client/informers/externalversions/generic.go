@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
+	steps "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1/steps"
 	v1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	v1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -83,6 +84,10 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Tekton().V1beta1().Tasks().Informer()}, nil
 	case v1beta1.SchemeGroupVersion.WithResource("taskruns"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Tekton().V1beta1().TaskRuns().Informer()}, nil
+
+		// Group=tekton.dev, Version=steps
+	case steps.SchemeGroupVersion.WithResource("steps"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Tekton().Steps().Steps().Informer()}, nil
 
 	}
 

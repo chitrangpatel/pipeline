@@ -26,6 +26,7 @@ import (
 	defaultconfig "github.com/tektoncd/pipeline/pkg/apis/config"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1/steps"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	"github.com/tektoncd/pipeline/pkg/apis/resolution"
@@ -54,6 +55,7 @@ var types = map[schema.GroupVersionKind]resourcesemantics.GenericCRD{
 	v1alpha1.SchemeGroupVersion.WithKind("VerificationPolicy"): &v1alpha1.VerificationPolicy{},
 	// v1beta1
 	v1beta1.SchemeGroupVersion.WithKind("Pipeline"):    &v1beta1.Pipeline{},
+	v1beta1.SchemeGroupVersion.WithKind("Step"):        &steps.Step{},
 	v1beta1.SchemeGroupVersion.WithKind("Task"):        &v1beta1.Task{},
 	v1beta1.SchemeGroupVersion.WithKind("ClusterTask"): &v1beta1.ClusterTask{},
 	v1beta1.SchemeGroupVersion.WithKind("TaskRun"):     &v1beta1.TaskRun{},
@@ -169,6 +171,13 @@ func newConversionController(ctx context.Context, cmw configmap.Watcher) *contro
 		// conversions to and from all types.
 		// "Zygotes" are the supported versions.
 		map[schema.GroupKind]conversion.GroupKindConversion{
+			v1.Kind("Step"): {
+				DefinitionName: pipeline.StepResource.String(),
+				HubVersion:     v1beta1GroupVersion,
+				Zygotes: map[string]conversion.ConvertibleObject{
+					v1beta1GroupVersion: &steps.Step{},
+				},
+			},
 			v1.Kind("Task"): {
 				DefinitionName: pipeline.TaskResource.String(),
 				HubVersion:     v1beta1GroupVersion,

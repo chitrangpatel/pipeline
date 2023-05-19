@@ -26,6 +26,8 @@ import (
 	faketektonv1alpha1 "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/typed/pipeline/v1alpha1/fake"
 	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/typed/pipeline/v1beta1"
 	faketektonv1beta1 "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/typed/pipeline/v1beta1/fake"
+	tektonsteps "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/typed/v1/steps"
+	faketektonsteps "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/typed/v1/steps/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -96,4 +98,9 @@ func (c *Clientset) TektonV1beta1() tektonv1beta1.TektonV1beta1Interface {
 // TektonV1 retrieves the TektonV1Client
 func (c *Clientset) TektonV1() tektonv1.TektonV1Interface {
 	return &faketektonv1.FakeTektonV1{Fake: &c.Fake}
+}
+
+// TektonSteps retrieves the TektonStepsClient
+func (c *Clientset) TektonSteps() tektonsteps.TektonStepsInterface {
+	return &faketektonsteps.FakeTektonSteps{Fake: &c.Fake}
 }

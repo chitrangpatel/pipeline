@@ -25,6 +25,7 @@ import (
 	tektonv1 "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/typed/pipeline/v1"
 	tektonv1alpha1 "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/typed/pipeline/v1alpha1"
 	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/typed/pipeline/v1beta1"
+	tektonsteps "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/typed/v1/steps"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
@@ -35,6 +36,7 @@ type Interface interface {
 	TektonV1alpha1() tektonv1alpha1.TektonV1alpha1Interface
 	TektonV1beta1() tektonv1beta1.TektonV1beta1Interface
 	TektonV1() tektonv1.TektonV1Interface
+	TektonSteps() tektonsteps.TektonStepsInterface
 }
 
 // Clientset contains the clients for groups.
@@ -43,6 +45,7 @@ type Clientset struct {
 	tektonV1alpha1 *tektonv1alpha1.TektonV1alpha1Client
 	tektonV1beta1  *tektonv1beta1.TektonV1beta1Client
 	tektonV1       *tektonv1.TektonV1Client
+	tektonSteps    *tektonsteps.TektonStepsClient
 }
 
 // TektonV1alpha1 retrieves the TektonV1alpha1Client
@@ -58,6 +61,11 @@ func (c *Clientset) TektonV1beta1() tektonv1beta1.TektonV1beta1Interface {
 // TektonV1 retrieves the TektonV1Client
 func (c *Clientset) TektonV1() tektonv1.TektonV1Interface {
 	return c.tektonV1
+}
+
+// TektonSteps retrieves the TektonStepsClient
+func (c *Clientset) TektonSteps() tektonsteps.TektonStepsInterface {
+	return c.tektonSteps
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -116,6 +124,10 @@ func NewForConfigAndClient(c *rest.Config, httpClient *http.Client) (*Clientset,
 	if err != nil {
 		return nil, err
 	}
+	cs.tektonSteps, err = tektonsteps.NewForConfigAndClient(&configShallowCopy, httpClient)
+	if err != nil {
+		return nil, err
+	}
 
 	cs.DiscoveryClient, err = discovery.NewDiscoveryClientForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
@@ -140,6 +152,7 @@ func New(c rest.Interface) *Clientset {
 	cs.tektonV1alpha1 = tektonv1alpha1.New(c)
 	cs.tektonV1beta1 = tektonv1beta1.New(c)
 	cs.tektonV1 = tektonv1.New(c)
+	cs.tektonSteps = tektonsteps.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs

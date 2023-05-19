@@ -28,6 +28,9 @@ const (
 	// TaskLabelKey is used as the label identifier for a Task
 	TaskLabelKey = GroupName + "/task"
 
+	// StepLabelKey is the step key
+	StepLabelKey = GroupName + "/step"
+
 	// TaskRunLabelKey is used as the label identifier for a TaskRun
 	TaskRunLabelKey = GroupName + "/taskRun"
 
@@ -52,6 +55,12 @@ const (
 )
 
 var (
+	// TaskResource represents a Tekton Task
+	StepResource = schema.GroupResource{
+		Group:    GroupName,
+		Resource: "steps",
+	}
+
 	// TaskResource represents a Tekton Task
 	TaskResource = schema.GroupResource{
 		Group:    GroupName,

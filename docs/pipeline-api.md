@@ -1496,6 +1496,43 @@ The names of the <code>params</code> must match the names of the <code>params</c
 </tr>
 </tbody>
 </table>
+<h3 id="tekton.dev/v1.Mapping">Mapping
+</h3>
+<p>
+(<em>Appears on:</em><a href="#tekton.dev/v1.Step">Step</a>)
+</p>
+<div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>name</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>value</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="tekton.dev/v1.Matrix">Matrix
 </h3>
 <p>
@@ -4208,6 +4245,44 @@ StepOutputConfig
 <p>Stores configuration for the stderr stream of the step.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>params</code><br/>
+<em>
+<a href="#tekton.dev/v1.Mapping">
+[]Mapping
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>results</code><br/>
+<em>
+<a href="#tekton.dev/v1.Mapping">
+[]Mapping
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>stepRef</code><br/>
+<em>
+<a href="#tekton.dev/v1.StepRef">
+StepRef
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>Contains the reference to an existing step</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="tekton.dev/v1.StepOutputConfig">StepOutputConfig
@@ -4236,6 +4311,34 @@ string
 <td>
 <em>(Optional)</em>
 <p>Path to duplicate stdout stream to on container&rsquo;s local filesystem.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="tekton.dev/v1.StepRef">StepRef
+</h3>
+<p>
+(<em>Appears on:</em><a href="#tekton.dev/v1.Step">Step</a>)
+</p>
+<div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>name</code><br/>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Name of the referenced step</p>
 </td>
 </tr>
 </tbody>

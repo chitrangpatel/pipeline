@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1/steps"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	clientset "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
@@ -222,6 +223,27 @@ func (l *LocalTaskRefResolver) GetTask(ctx context.Context, name string) (*v1.Ta
 		return nil, nil, nil, err
 	}
 	return task, nil, nil, nil
+}
+
+// LocalStepRefResolver uses the current cluster to resolve a step reference.
+type LocalStepRefResolver struct {
+	Namespace    string
+	Tektonclient clientset.Interface
+}
+
+// GetTask will resolve either a Task or ClusterTask from the local cluster using a versioned Tekton client. It will
+// return an error if it can't find an appropriate Task for any reason.
+func (l *LocalStepRefResolver) GetStep(ctx context.Context, name string) (steps.StepObject, *v1beta1.ConfigSource, error) {
+
+	// If we are going to resolve this reference locally, we need a namespace scope.
+	if l.Namespace == "" {
+		return nil, nil, fmt.Errorf("must specify namespace to resolve reference to task %s", name)
+	}
+	step, err := l.Tektonclient.TektonV1beta1().Steps(l.Namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, nil, err
+	}
+	return step, nil, nil
 }
 
 // IsGetTaskErrTransient returns true if an error returned by GetTask is retryable.
