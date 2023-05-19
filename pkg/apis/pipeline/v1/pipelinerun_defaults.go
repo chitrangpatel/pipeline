@@ -31,6 +31,7 @@ var _ apis.Defaultable = (*PipelineRun)(nil)
 // SetDefaults implements apis.Defaultable
 func (pr *PipelineRun) SetDefaults(ctx context.Context) {
 	pr.Spec.SetDefaults(ctx)
+	pr.Status.SetDefaults(ctx)
 }
 
 // SetDefaults implements apis.Defaultable
@@ -58,5 +59,16 @@ func (prs *PipelineRunSpec) SetDefaults(ctx context.Context) {
 
 	if prs.PipelineSpec != nil {
 		prs.PipelineSpec.SetDefaults(ctx)
+	}
+}
+
+// SetDefaults implements apis.Defaultable
+func (prs *PipelineRunStatus) SetDefaults(ctx context.Context) {
+	cfg := config.FromContextOrDefaults(ctx)
+	if prs.Provenance == nil {
+		prs.Provenance = &Provenance{}
+	}
+	if prs.Provenance.FeatureFlags == nil {
+		prs.Provenance.FeatureFlags = cfg.FeatureFlags
 	}
 }

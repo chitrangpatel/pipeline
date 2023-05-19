@@ -45,6 +45,8 @@ func (tr *TaskRun) SetDefaults(ctx context.Context) {
 	if _, found := tr.ObjectMeta.Labels[ManagedByLabelKey]; !found {
 		tr.ObjectMeta.Labels[ManagedByLabelKey] = cfg.Defaults.DefaultManagedByLabelValue
 	}
+
+	tr.Status.SetDefaults(ctx)
 }
 
 // SetDefaults implements apis.Defaultable
@@ -74,5 +76,16 @@ func (trs *TaskRunSpec) SetDefaults(ctx context.Context) {
 	// If this taskrun has an embedded task, apply the usual task defaults
 	if trs.TaskSpec != nil {
 		trs.TaskSpec.SetDefaults(ctx)
+	}
+}
+
+// SetDefaults implements apis.Defaultable
+func (trs *TaskRunStatus) SetDefaults(ctx context.Context) {
+	cfg := config.FromContextOrDefaults(ctx)
+	if trs.Provenance == nil {
+		trs.Provenance = &Provenance{}
+	}
+	if trs.Provenance.FeatureFlags == nil {
+		trs.Provenance.FeatureFlags = cfg.FeatureFlags
 	}
 }

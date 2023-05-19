@@ -108,6 +108,20 @@ func (c *Reconciler) ReconcileKind(ctx context.Context, tr *v1beta1.TaskRun) pkg
 	defer span.End()
 
 	span.SetAttributes(attribute.String("taskrun", tr.Name), attribute.String("namespace", tr.Namespace))
+	for _, ref := range tr.GetOwnerReferences() {
+		if ref.Kind == pipeline.PipelineRunControllerName {
+			pr, _ := c.PipelineClientSet.TektonV1beta1().PipelineRuns(tr.Namespace).Get(ctx, ref.Name, metav1.GetOptions{})
+			if pr.Status.Provenance != nil {
+				if tr.Status.Provenance == nil {
+					tr.Status.Provenance = &v1beta1.Provenance{}
+				}
+				if tr.Status.Provenance.FeatureFlags == nil {
+					tr.Status.Provenance.FeatureFlags = pr.Status.Provenance.FeatureFlags
+				}
+			}
+		}
+	}
+
 	// Read the initial condition
 	before := tr.Status.GetCondition(apis.ConditionSucceeded)
 
