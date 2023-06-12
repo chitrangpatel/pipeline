@@ -76,62 +76,65 @@ func expandStep(ctx context.Context, s v1beta1.Step, k8s kubernetes.Interface, t
 		}
 
 		stps := []v1beta1.Step{}
-		log.Println("FOUND USES IN STEP...", s.Uses.TaskRef.Name)
+		log.Println("FOUND USES IN STEP...", s.Name, s.Uses.TaskRef)
 		// Fetch taskRef
-		getTask := GetVerifiedTaskFunc(ctx, k8s, tekton, requester, taskrun, s.Uses.TaskRef, taskrun.Name, taskrun.Namespace, taskrun.Spec.ServiceAccountName, verificationpolicies)
-		task, _, err := getTask(ctx, s.Uses.TaskRef.Name)
-		log.Println("ERRORRRR: ", err)
+		// getTask := GetVerifiedTaskFunc(ctx, k8s, tekton, requester, taskrun, s.Uses.TaskRef, s.Name, taskrun.Namespace, taskrun.Spec.ServiceAccountName, verificationpolicies)
+		getTask := GetVerifiedTaskFunc(ctx, k8s, tekton, requester, taskrun, s.Uses.TaskRef, s.Name, taskrun.Namespace, taskrun.Spec.ServiceAccountName, verificationpolicies)
+		task, _, err := getTask(ctx, s.Name)
 		if err != nil {
 			return err, stps
 		}
-		for _, step := range task.TaskSpec().Steps {
-			spec := task.TaskSpec()
-			err, expandedSteps := expandStep(ctx, step, k8s, tekton, requester, &spec, taskrun, verificationpolicies)
-			if err != nil {
-				return err, stps
-			}
-			defaults = []v1beta1.ParamSpec{}
-			if len(spec.Params) > 0 {
-				defaults = append(defaults, spec.Params...)
-			}
-			sr, ar := ApplyParameterReplacements(ctx, &spec, taskrun, defaults...)
-			for k, v := range sr {
-				stringReplacements[k] = v
-			}
-			for k, v := range ar {
-				arrayReplacements[k] = v
-			}
+		log.Println(task.TaskMetadata().Name)
+		spec := task.TaskSpec()
+		/*err, expandedSteps := expandStep(ctx, step, k8s, tekton, requester, &spec, taskrun, verificationpolicies)
+		if err != nil {
+			return err, stps
+		}*/
+		defaults = []v1beta1.ParamSpec{}
+		if len(spec.Params) > 0 {
+			defaults = append(defaults, spec.Params...)
+		}
+		sr, ar := ApplyParameterReplacements(ctx, &spec, taskrun, defaults...)
+		for k, v := range sr {
+			stringReplacements[k] = v
+		}
+		for k, v := range ar {
+			arrayReplacements[k] = v
+		}
 
-			// Apply task result substitution
-			patterns := []string{
-				"results.%s.path",
-				"results[%q].path",
-				"results['%s'].path",
-			}
+		// Apply task result substitution
+		patterns := []string{
+			"results.%s.path",
+			"results[%q].path",
+			"results['%s'].path",
+		}
 
-			for _, result := range spec.Results {
-				for _, pattern := range patterns {
-					stringReplacements[fmt.Sprintf(pattern, result.Name)] = filepath.Join(pipeline.DefaultResultPath, result.Name)
+		for _, result := range spec.Results {
+			for _, pattern := range patterns {
+				stringReplacements[fmt.Sprintf(pattern, result.Name)] = filepath.Join(pipeline.DefaultResultPath, result.Name)
+			}
+		}
+
+		// Apply variable expansion to steps fields.
+		// for i := range expandedSteps {
+		for i := range task.TaskSpec().Steps {
+			// for i := range spec.Steps {
+			// container.ApplyStepReplacements(&expandedSteps[i], stringReplacements, arrayReplacements)
+			container.ApplyStepReplacements(&task.TaskSpec().Steps[i], stringReplacements, arrayReplacements)
+		}
+
+		// for _, es := range expandedSteps {
+		for _, es := range task.TaskSpec().Steps {
+			found := false
+			for _, st := range stps {
+				if es.Name == st.Name {
+					found = true
+					break
 				}
 			}
-
-			// Apply variable expansion to steps fields.
-			for i := range expandedSteps {
-				container.ApplyStepReplacements(&expandedSteps[i], stringReplacements, arrayReplacements)
-			}
-
-			for _, es := range expandedSteps {
-				found := false
-				for _, st := range stps {
-					if es.Name == st.Name {
-						found = true
-						break
-					}
-				}
-				if !found {
-					es.Name = fmt.Sprintf("%s-%s", s.Name, es.Name)
-					stps = append(stps, es)
-				}
+			if !found {
+				es.Name = fmt.Sprintf("%s-%s", s.Name, es.Name)
+				stps = append(stps, es)
 			}
 		}
 		return nil, stps

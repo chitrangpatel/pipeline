@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/google/go-containerregistry/pkg/authn/k8schain"
@@ -84,6 +85,7 @@ func GetTaskFuncFromTaskRun(ctx context.Context, k8s kubernetes.Interface, tekto
 // verify the task if resource-verification-mode is not "skip"
 func GetVerifiedTaskFunc(ctx context.Context, k8s kubernetes.Interface, tekton clientset.Interface, requester remoteresource.Requester,
 	owner kmeta.OwnerRefable, taskref *v1beta1.TaskRef, trName string, namespace, saName string, verificationpolicies []*v1alpha1.VerificationPolicy) GetTask {
+	log.Println("GETTING TASK FUNC: ", taskref, trName, namespace)
 	get := GetTaskFunc(ctx, k8s, tekton, requester, owner, taskref, trName, namespace, saName)
 
 	return func(context.Context, string) (v1beta1.TaskObject, *v1beta1.ConfigSource, error) {
@@ -142,6 +144,7 @@ func GetTaskFunc(ctx context.Context, k8s kubernetes.Interface, tekton clientset
 	case tr != nil && tr.Resolver != "" && requester != nil:
 		// Return an inline function that implements GetTask by calling Resolver.Get with the specified task type and
 		// casting it to a TaskObject.
+		log.Println("Remotely resolving...")
 		return func(ctx context.Context, name string) (v1beta1.TaskObject, *v1beta1.ConfigSource, error) {
 			var replacedParams []v1beta1.Param
 			if ownerAsTR, ok := owner.(*v1beta1.TaskRun); ok {
