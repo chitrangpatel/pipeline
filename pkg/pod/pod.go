@@ -18,6 +18,7 @@ package pod
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math"
@@ -84,7 +85,6 @@ var (
 	}, {
 		Name:      "tekton-internal-steps",
 		MountPath: pipeline.StepsDir,
-		ReadOnly:  true,
 	}}
 	implicitVolumes = []corev1.Volume{{
 		Name:         "tekton-internal-workspace",
@@ -350,7 +350,7 @@ func (b *Builder) Build(ctx context.Context, taskRun *v1.TaskRun, taskSpec v1.Ta
 	// TODO(#1605): Remove this loop and make each transformation in
 	// isolation.
 	for i, s := range stepContainers {
-		stepContainers[i].Name = names.SimpleNameGenerator.RestrictLength(StepName(s.Name, i))
+		stepContainers[i].Name = names.SimpleNameGenerator.RestrictLength(StepName(s.Name, i, true))
 	}
 
 	// Add podTemplate Volumes to the explicitly declared use volumes
@@ -537,7 +537,7 @@ func entrypointInitContainer(image string, steps []v1.Step, setSecurityContext, 
 	// into the correct location for later steps and initialize steps folder
 	command := []string{"/ko-app/entrypoint", "init", "/ko-app/entrypoint", entrypointBinary}
 	for i, s := range steps {
-		command = append(command, StepName(s.Name, i))
+		command = append(command, StepName(s.Name, i, true))
 	}
 	volumeMounts := []corev1.VolumeMount{binMount, internalStepsMount}
 	securityContext := linuxSecurityContext
@@ -570,7 +570,19 @@ func entrypointInitContainer(image string, steps []v1.Step, setSecurityContext, 
 // that will allow it to run in namespaces with "restricted" pod security admission.
 func createResultsSidecar(taskSpec v1.TaskSpec, image string, setSecurityContext, windows bool) v1.Sidecar {
 	names := make([]string, 0, len(taskSpec.Results))
+	declaredStepResults := make(map[string]string)
+	undeclaredStepResults := map[string][]string{}
 	for _, r := range taskSpec.Results {
+		if r.Value.StringVal != "" {
+			sName, resultName := extractStepResultName(r.Value.StringVal)
+			declaredStepResults[r.Name] = filepath.Join(pipeline.StepsDir, sName, "results", resultName)
+		} else {
+			undeclaredStepResults[r.Name] = []string{}
+			for i, step := range taskSpec.Steps {
+				sName := StepName(step.Name, i, false)
+				undeclaredStepResults[r.Name] = append(undeclaredStepResults[r.Name], filepath.Join(pipeline.StepsDir, sName, "results", r.Name))
+			}
+		}
 		names = append(names, r.Name)
 	}
 	securityContext := linuxSecurityContext
@@ -578,7 +590,12 @@ func createResultsSidecar(taskSpec v1.TaskSpec, image string, setSecurityContext
 		securityContext = windowsSecurityContext
 	}
 	resultsStr := strings.Join(names, ",")
-	command := []string{"/ko-app/sidecarlogresults", "-results-dir", pipeline.DefaultResultPath, "-result-names", resultsStr}
+
+	declaredResBytes, _ := json.Marshal(declaredStepResults)
+	undeclaredResBytes, _ := json.Marshal(undeclaredStepResults)
+
+	command := []string{"/ko-app/sidecarlogresults", "-results-dir", pipeline.DefaultResultPath, "-result-names", resultsStr, "-declared-results", string(declaredResBytes), "-undeclared-results", string(undeclaredResBytes)}
+
 	sidecar := v1.Sidecar{
 		Name:    pipeline.ReservedResultsSidecarName,
 		Image:   image,

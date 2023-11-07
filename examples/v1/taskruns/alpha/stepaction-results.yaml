@@ -1,0 +1,43 @@
+apiVersion: tekton.dev/v1alpha1
+kind: StepAction
+metadata:
+  name: step-action
+spec:
+  results:
+    - name: res1
+  params:
+    - name: p1
+  image: alpine
+  script: |
+    echo $(params.p1) > $(step.results.res1.path)
+---
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: step-action-run
+spec:
+  TaskSpec:
+    results:
+      - name: res1
+      - name: res3
+        value: $(steps.named.results.res1)
+      - name: res2
+        value: $(steps.bobobo.results.res1)
+    steps:
+      - ref:
+          name: step-action
+        params:
+          - name: p1
+            value: "named"
+        name: named
+      - ref:
+          name: step-action
+        params:
+          - name: p1
+            value: "unnamed again"
+      - name: bobobo
+        ref:
+          name: step-action
+        params:
+          - name: p1
+            value: "bobobo"

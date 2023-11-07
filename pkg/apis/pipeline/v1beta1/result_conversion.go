@@ -33,6 +33,7 @@ func (r TaskResult) convertTo(ctx context.Context, sink *v1.TaskResult) {
 		}
 		sink.Properties = properties
 	}
+	r.Value.convertTo(ctx, sink.Value)
 }
 
 func (r *TaskResult) convertFrom(ctx context.Context, source v1.TaskResult) {
@@ -46,4 +47,5 @@ func (r *TaskResult) convertFrom(ctx context.Context, source v1.TaskResult) {
 		}
 		r.Properties = properties
 	}
+	r.Value.convertFrom(ctx, *source.Value)
 }

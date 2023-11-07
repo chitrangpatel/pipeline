@@ -25,6 +25,7 @@ import (
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	clientset "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	resolutionutil "github.com/tektoncd/pipeline/pkg/internal/resolution"
+	"github.com/tektoncd/pipeline/pkg/pod"
 	remoteresource "github.com/tektoncd/pipeline/pkg/resolution/resource"
 	"github.com/tektoncd/pipeline/pkg/trustedresources"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -103,7 +104,7 @@ func GetTaskData(ctx context.Context, taskRun *v1.TaskRun, getTask GetTask) (*re
 // GetStepActionsData extracts the StepActions and merges them with the inlined Step specification.
 func GetStepActionsData(ctx context.Context, taskSpec v1.TaskSpec, taskRun *v1.TaskRun, tekton clientset.Interface, k8s kubernetes.Interface, requester remoteresource.Requester) ([]v1.Step, error) {
 	steps := []v1.Step{}
-	for _, step := range taskSpec.Steps {
+	for i, step := range taskSpec.Steps {
 		s := step.DeepCopy()
 		if step.Ref != nil {
 			getStepAction := GetStepActionFunc(tekton, k8s, requester, taskRun, s)
@@ -131,7 +132,8 @@ func GetStepActionsData(ctx context.Context, taskSpec v1.TaskSpec, taskRun *v1.T
 			if err := validateStepHasStepActionParameters(s.Params, stepActionSpec.Params); err != nil {
 				return nil, err
 			}
-			s = applyStepActionParameters(s, &taskSpec, taskRun, s.Params, stepActionSpec.Params)
+			stepName := pod.StepName(s.Name, i, false)
+			s = applyStepActionParametersAndResults(s, &taskSpec, taskRun, s.Params, stepActionSpec, stepName)
 			s.Params = nil
 			s.Ref = nil
 			steps = append(steps, *s)

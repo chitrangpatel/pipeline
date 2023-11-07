@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -117,6 +118,12 @@ var (
 	DownwardMountCancelFile = filepath.Join(downwardMountPoint, downwardMountCancelFile)
 )
 
+func extractStepResultName(value string) (string, string) {
+	re := regexp.MustCompile(`\$\(steps\.(.*?)\.results\.(.*?)\)`)
+	rs := re.FindStringSubmatch(value)
+	return rs[1], rs[2]
+}
+
 // orderContainers returns the specified steps, modified so that they are
 // executed in order by overriding the entrypoint binary.
 //
@@ -143,11 +150,13 @@ func orderContainers(commonExtraEntrypointArgs []string, steps []corev1.Containe
 		} else { // Not the first step - wait for previous
 			argsForEntrypoint = append(argsForEntrypoint, "-wait_file", filepath.Join(RunDir, strconv.Itoa(i-1), "out"))
 		}
+		stepName := StepName(s.Name, i, false)
 		argsForEntrypoint = append(argsForEntrypoint,
 			// Start next step.
 			"-post_file", filepath.Join(RunDir, idx, "out"),
 			"-termination_path", terminationPath,
 			"-step_metadata_dir", filepath.Join(RunDir, idx, "status"),
+			"-step_name", stepName,
 		)
 		argsForEntrypoint = append(argsForEntrypoint, commonExtraEntrypointArgs...)
 		if taskSpec != nil {
@@ -170,6 +179,7 @@ func orderContainers(commonExtraEntrypointArgs []string, steps []corev1.Containe
 				}
 			}
 			argsForEntrypoint = append(argsForEntrypoint, resultArgument(steps, taskSpec.Results)...)
+			argsForEntrypoint = append(argsForEntrypoint, stepResultArgument(taskSpec.Results, stepName)...)
 		}
 
 		if breakpointConfig != nil && breakpointConfig.NeedsDebugOnFailure() {
@@ -199,6 +209,28 @@ func orderContainers(commonExtraEntrypointArgs []string, steps []corev1.Containe
 	return steps, nil
 }
 
+func stepResultArgument(results []v1.TaskResult, stepName string) []string {
+	if len(results) == 0 {
+		return nil
+	}
+	if stepName == "" {
+		return nil
+	}
+	res := map[string]string{}
+	for _, r := range results {
+		if r.Value.StringVal != "" {
+			sName, resultName := extractStepResultName(r.Value.StringVal)
+			if stepName == sName {
+				res[r.Name] = filepath.Join(pipeline.StepsDir, stepName, "results", resultName)
+			}
+		} else {
+			res[r.Name] = filepath.Join(pipeline.StepsDir, stepName, "results", r.Name)
+		}
+	}
+	resBytes, _ := json.Marshal(res)
+	return []string{"-step_results", string(resBytes)}
+}
+
 func resultArgument(steps []corev1.Container, results []v1.TaskResult) []string {
 	if len(results) == 0 {
 		return nil
@@ -209,7 +241,9 @@ func resultArgument(steps []corev1.Container, results []v1.TaskResult) []string 
 func collectResultsName(results []v1.TaskResult) string {
 	var resultNames []string
 	for _, r := range results {
-		resultNames = append(resultNames, r.Name)
+		if r.Value.StringVal == "" {
+			resultNames = append(resultNames, r.Name)
+		}
 	}
 	return strings.Join(resultNames, ",")
 }
@@ -333,9 +367,13 @@ func TrimSidecarPrefix(name string) string { return strings.TrimPrefix(name, sid
 
 // StepName returns the step name after adding "step-" prefix to the actual step name or
 // returns "step-unnamed-<step-index>" if not specified
-func StepName(name string, i int) string {
-	if name != "" {
-		return fmt.Sprintf("%s%s", stepPrefix, name)
+func StepName(name string, i int, addPrefix bool) string {
+	prefix := ""
+	if addPrefix {
+		prefix = stepPrefix
 	}
-	return fmt.Sprintf("%sunnamed-%d", stepPrefix, i)
+	if name != "" {
+		return fmt.Sprintf("%s%s", prefix, name)
+	}
+	return fmt.Sprintf("%sunnamed-%d", prefix, i)
 }

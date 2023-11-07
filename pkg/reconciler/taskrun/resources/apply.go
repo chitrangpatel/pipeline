@@ -24,6 +24,7 @@ import (
 
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/tektoncd/pipeline/pkg/container"
 	"github.com/tektoncd/pipeline/pkg/pod"
 	"github.com/tektoncd/pipeline/pkg/substitution"
@@ -44,14 +45,20 @@ var (
 		// FIXME(vdemeester) Remove that with deprecating v1beta1
 		"inputs.params.%s",
 	}
+	stepActionResultPatterns = []string{
+		"step.results.%s.path",
+		"step.results[%q].path",
+		"step.results['%s'].path",
+	}
 )
 
 // applyStepActionParameters applies the params from the Task and the underlying Step to the referenced StepAction.
-func applyStepActionParameters(step *v1.Step, spec *v1.TaskSpec, tr *v1.TaskRun, stepParams v1.Params, defaults []v1.ParamSpec) *v1.Step {
+func applyStepActionParametersAndResults(step *v1.Step, spec *v1.TaskSpec, tr *v1.TaskRun, stepParams v1.Params, stepActionSpec v1alpha1.StepActionSpec, stepName string) *v1.Step {
 	if stepParams != nil {
 		stringR, arrayR, objectR := getTaskParameters(spec, tr, spec.Params...)
 		stepParams = stepParams.ReplaceVariables(stringR, arrayR, objectR)
 	}
+	defaults := stepActionSpec.Params
 	// Set params from StepAction defaults
 	stringReplacements, arrayReplacements, _ := replacementsFromDefaultParams(defaults)
 
@@ -62,6 +69,12 @@ func applyStepActionParameters(step *v1.Step, spec *v1.TaskSpec, tr *v1.TaskRun,
 	}
 	for k, v := range stepArrays {
 		arrayReplacements[k] = v
+	}
+
+	for _, result := range stepActionSpec.Results {
+		for _, pattern := range stepActionResultPatterns {
+			stringReplacements[fmt.Sprintf(pattern, result.Name)] = filepath.Join(pipeline.StepsDir, stepName, "results", result.Name)
+		}
 	}
 
 	container.ApplyStepReplacements(step, stringReplacements, arrayReplacements)
@@ -282,8 +295,8 @@ func ApplyStepExitCodePath(spec *v1.TaskSpec) *v1.TaskSpec {
 	stringReplacements := map[string]string{}
 
 	for i, step := range spec.Steps {
-		stringReplacements[fmt.Sprintf("steps.%s.exitCode.path", pod.StepName(step.Name, i))] =
-			filepath.Join(pipeline.StepsDir, pod.StepName(step.Name, i), "exitCode")
+		stringReplacements[fmt.Sprintf("steps.%s.exitCode.path", pod.StepName(step.Name, i, true))] =
+			filepath.Join(pipeline.StepsDir, pod.StepName(step.Name, i, true), "exitCode")
 	}
 	return ApplyReplacements(spec, stringReplacements, map[string][]string{}, map[string]map[string]string{})
 }

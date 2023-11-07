@@ -92,7 +92,7 @@ func waitForStepsToFinish(runDir string) error {
 // LookForResults waits for results to be written out by the steps
 // in their results path and prints them in a structured way to its
 // stdout so that the reconciler can parse those logs.
-func LookForResults(w io.Writer, runDir string, resultsDir string, resultNames []string) error {
+func LookForResults(w io.Writer, runDir string, resultsDir string, resultNames []string, declaredStepResults map[string]string, undeclaredStepResults map[string][]string) error {
 	if err := waitForStepsToFinish(runDir); err != nil {
 		return fmt.Errorf("error while waiting for the steps to finish  %w", err)
 	}
@@ -116,6 +116,50 @@ func LookForResults(w io.Writer, runDir string, resultsDir string, resultNames [
 			return nil
 		})
 	}
+
+	// go through the undeclared step results
+	for resultName, stepResults := range undeclaredStepResults {
+		resultName := resultName
+		stepResults := stepResults
+		for _, resultPath := range stepResults {
+			resultPath := resultPath
+			g.Go(func() error {
+				value, err := os.ReadFile(resultPath)
+				if os.IsNotExist(err) {
+					return nil
+				} else if err != nil {
+					return fmt.Errorf("error reading the results file %w", err)
+				}
+				newResult := SidecarLogResult{
+					Name:  resultName,
+					Value: string(value),
+				}
+				results <- newResult
+				return nil
+			})
+		}
+	}
+
+	// go through the declared step results
+	for resultName, resultPath := range declaredStepResults {
+		resultPath := resultPath
+		resultName := resultName
+		g.Go(func() error {
+			value, err := os.ReadFile(resultPath)
+			if os.IsNotExist(err) {
+				return nil
+			} else if err != nil {
+				return fmt.Errorf("error reading the results file %w", err)
+			}
+			newResult := SidecarLogResult{
+				Name:  resultName,
+				Value: string(value),
+			}
+			results <- newResult
+			return nil
+		})
+	}
+
 	channelGroup := new(errgroup.Group)
 	channelGroup.Go(func() error {
 		if err := g.Wait(); err != nil {

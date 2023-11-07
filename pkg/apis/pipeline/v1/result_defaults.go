@@ -20,6 +20,11 @@ func (tr *TaskResult) SetDefaults(context.Context) {
 	if tr == nil {
 		return
 	}
+	if tr.Value == nil {
+		tr.Value = &ParamValue{
+			Type: ParamTypeString,
+		}
+	}
 	if tr.Type == "" {
 		if tr.Properties != nil {
 			// Set type to object if `properties` is given

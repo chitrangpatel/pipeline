@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"log"
 	"os"
@@ -30,14 +31,28 @@ import (
 func main() {
 	var resultsDir string
 	var resultNames string
+	var declaredStepResults string
+	var undeclaredStepResults string
 	flag.StringVar(&resultsDir, "results-dir", pipeline.DefaultResultPath, "Path to the results directory. Default is /tekton/results")
 	flag.StringVar(&resultNames, "result-names", "", "comma separated result names to expect from the steps running in the pod. eg. foo,bar,baz")
+	flag.StringVar(&declaredStepResults, "declared-results", "", "step results explicitly requested by the Task.")
+	flag.StringVar(&undeclaredStepResults, "undeclared-results", "", "possible step results that need to be auto-surfaced.")
 	flag.Parse()
 	if resultNames == "" {
 		log.Fatal("result-names were not provided")
 	}
 	expectedResults := strings.Split(resultNames, ",")
-	err := sidecarlogresults.LookForResults(os.Stdout, pod.RunDir, resultsDir, expectedResults)
+	declaredResults := map[string]string{}
+	err := json.Unmarshal([]byte(declaredStepResults), &declaredResults)
+	if err != nil {
+		log.Fatal(err)
+	}
+	undeclaredResults := map[string][]string{}
+	err = json.Unmarshal([]byte(undeclaredStepResults), &undeclaredResults)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = sidecarlogresults.LookForResults(os.Stdout, pod.RunDir, resultsDir, expectedResults, declaredResults, undeclaredResults)
 	if err != nil {
 		log.Fatal(err)
 	}
